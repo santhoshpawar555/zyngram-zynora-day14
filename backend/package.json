@@ -1,0 +1,17 @@
+{
+  "name": "zyngram-zynora-backend",
+  "version": "1.1.1",
+  "private": true,
+  "description": "Zynora RAG-only internal chatbot backend - zero npm dependencies (Node built-ins only).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-rag.js && node test-day12.js",
+    "eval": "node eval/run-regression.js",
+    "migrate": "node scripts/migrate-v1.0-to-v1.1.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.6",
+    "mongodb": "^7.7.0"
+  }
+}
