@@ -1,0 +1,127 @@
+{
+  "label": "myrun",
+  "at": "2026-10-08T08:27:53.859Z",
+  "firstResponseMs": 559,
+  "chatSequential100": {
+    "n": 100,
+    "avg": 563.9,
+    "p50": 518,
+    "p95": 885,
+    "p99": 1107,
+    "max": 1107
+  },
+  "longConversation": {
+    "first10": {
+      "n": 10,
+      "avg": 581.9,
+      "p50": 530,
+      "p95": 888,
+      "p99": 888,
+      "max": 888
+    },
+    "last10": {
+      "n": 10,
+      "avg": 601.4,
+      "p50": 571,
+      "p95": 885,
+      "p99": 885,
+      "max": 885
+    }
+  },
+  "healthApi": {
+    "n": 50,
+    "avg": 80.3,
+    "p50": 79.1,
+    "p95": 126.17,
+    "p99": 153.65,
+    "max": 153.65
+  },
+  "listConversationsApi": {
+    "n": 50,
+    "avg": 117.3,
+    "p50": 119.94,
+    "p95": 155.24,
+    "p99": 182.4,
+    "max": 182.4
+  },
+  "monitoringApi": {
+    "n": 20,
+    "avg": 1742,
+    "p50": 1949.9,
+    "p95": 3034.69,
+    "p99": 3034.69,
+    "max": 3034.69
+  },
+  "concurrent20": {
+    "requests": 20,
+    "ok": 20,
+    "failed": 0,
+    "wallMs": 2586,
+    "throughputRps": 8,
+    "latency": {
+      "n": 20,
+      "avg": 1853.2,
+      "p50": 2038,
+      "p95": 2585,
+      "p99": 2585,
+      "max": 2585
+    }
+  },
+  "concurrent100": {
+    "requests": 100,
+    "ok": 100,
+    "failed": 0,
+    "wallMs": 12088,
+    "throughputRps": 8,
+    "latency": {
+      "n": 100,
+      "avg": 9126,
+      "p50": 8914,
+      "p95": 11009,
+      "p99": 12079,
+      "max": 12079
+    }
+  },
+  "frontend": {
+    "status": 200,
+    "ms": 632
+  },
+  "dbQueryMs": {
+    "chatHistory_findAll": {
+      "n": 20,
+      "avg": 180.5,
+      "p50": 163.39,
+      "p95": 309.44,
+      "p99": 309.44,
+      "max": 309.44
+    },
+    "conversations_findAll": {
+      "n": 20,
+      "avg": 64.2,
+      "p50": 51.14,
+      "p95": 240.51,
+      "p99": 240.51,
+      "max": 240.51
+    },
+    "chatHistoryRows": 1076
+  },
+  "retrievalSmallKbMs": {
+    "chunks": 29,
+    "n": 20,
+    "avg": 51.9,
+    "p50": 45.6,
+    "p95": 85.98,
+    "p99": 85.98,
+    "max": 85.98
+  },
+  "retrievalLargeKbMs": {
+    "chunks": 5029,
+    "n": 10,
+    "avg": 6226.9,
+    "p50": 5828.89,
+    "p95": 8894.79,
+    "p99": 8894.79,
+    "max": 8894.79
+  },
+  "chatWithLargeKbMs": 16335
+}

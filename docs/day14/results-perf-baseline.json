@@ -1,0 +1,127 @@
+{
+  "label": "baseline",
+  "at": "2026-10-08T04:07:42.813Z",
+  "firstResponseMs": 11,
+  "chatSequential100": {
+    "n": 100,
+    "avg": 5.5,
+    "p50": 5,
+    "p95": 8,
+    "p99": 12,
+    "max": 12
+  },
+  "longConversation": {
+    "first10": {
+      "n": 10,
+      "avg": 5.1,
+      "p50": 4,
+      "p95": 12,
+      "p99": 12,
+      "max": 12
+    },
+    "last10": {
+      "n": 10,
+      "avg": 6.7,
+      "p50": 7,
+      "p95": 8,
+      "p99": 8,
+      "max": 8
+    }
+  },
+  "healthApi": {
+    "n": 50,
+    "avg": 0.5,
+    "p50": 0.47,
+    "p95": 0.98,
+    "p99": 1.57,
+    "max": 1.57
+  },
+  "listConversationsApi": {
+    "n": 50,
+    "avg": 1.6,
+    "p50": 1.53,
+    "p95": 2.81,
+    "p99": 3.99,
+    "max": 3.99
+  },
+  "monitoringApi": {
+    "n": 20,
+    "avg": 2.8,
+    "p50": 2.57,
+    "p95": 4.66,
+    "p99": 4.66,
+    "max": 4.66
+  },
+  "concurrent20": {
+    "requests": 20,
+    "ok": 20,
+    "failed": 0,
+    "wallMs": 144,
+    "throughputRps": 139,
+    "latency": {
+      "n": 20,
+      "avg": 144,
+      "p50": 144,
+      "p95": 144,
+      "p99": 144,
+      "max": 144
+    }
+  },
+  "concurrent100": {
+    "requests": 100,
+    "ok": 100,
+    "failed": 0,
+    "wallMs": 1001,
+    "throughputRps": 100,
+    "latency": {
+      "n": 100,
+      "avg": 997.7,
+      "p50": 998,
+      "p95": 999,
+      "p99": 999,
+      "max": 999
+    }
+  },
+  "frontend": {
+    "status": 200,
+    "ms": 13
+  },
+  "dbQueryMs": {
+    "chatHistory_findAll": {
+      "n": 20,
+      "avg": 0,
+      "p50": 0.02,
+      "p95": 0.07,
+      "p99": 0.07,
+      "max": 0.07
+    },
+    "conversations_findAll": {
+      "n": 20,
+      "avg": 0,
+      "p50": 0.01,
+      "p95": 0.04,
+      "p99": 0.04,
+      "max": 0.04
+    },
+    "chatHistoryRows": 442
+  },
+  "retrievalSmallKbMs": {
+    "chunks": 24,
+    "n": 20,
+    "avg": 0.8,
+    "p50": 0.81,
+    "p95": 1.13,
+    "p99": 1.13,
+    "max": 1.13
+  },
+  "retrievalLargeKbMs": {
+    "chunks": 5024,
+    "n": 10,
+    "avg": 190.6,
+    "p50": 195.33,
+    "p95": 225.97,
+    "p99": 225.97,
+    "max": 225.97
+  },
+  "chatWithLargeKbMs": 462
+}
