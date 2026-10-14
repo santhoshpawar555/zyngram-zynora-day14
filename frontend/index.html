@@ -1,2415 +1,538 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<title>Zynora - Zyngram Internal Assistant <small style="font-size:12px;font-weight:normal">v1.1</small></title>
-
+<title>Zynora - Zyngram Internal Assistant</title>
 <link rel="icon" href="./assets/zyngram_logo1.ico" type="image/x-icon">
-
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
-  * {
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
-  }
-
-  body {
-    margin: 0;
-    background: #f2f4f8;
-    color: #1c2430;
-  }
-
-  header {
-    background: #787d87;
-    color: white;
-    padding: 14px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-  }
-
-  header h1 {
-    margin: 0;
-    font-size: 18px;
-  }
-
-  nav button {
-    background: transparent;
-    border: 1px solid white;
-    color: white;
-    padding: 6px 12px;
-    margin-left: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  nav button:hover {
-    background: white;
-    color: #142850;
-  }
-
-  nav button.active {
-    background: white;
-    color: #142850;
-  }
-
-  .layout {
-    max-width: 1200px;
-    margin: 20px auto;
-    padding: 0 16px;
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 16px;
-  }
-
-  .wrap {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 16px;
-  }
-
-  .card {
-    background: white;
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  }
-
-  .sidebar {
-    min-width: 0;
-  }
-
-  .sidebar h3 {
-    margin-top: 0;
-  }
-
-  .conversation-list {
-    margin-top: 12px;
-    max-height: 500px;
-    overflow-y: auto;
-  }
-
-  .conversation-item {
-    padding: 10px;
-    border-radius: 7px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    background: #f5f6f8;
-  }
-
-  .conversation-item:hover {
-    background: #e9edf5;
-  }
-
-  .conversation-item.active {
-    background: #e8edf7;
-    border-color: #142850;
-  }
-
-  .conversation-title {
-    font-size: 14px;
-    font-weight: bold;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .conversation-date {
-    font-size: 10px;
-    color: #777;
-    margin-top: 4px;
-  }
-
-  .conversation-actions {
-    margin-top: 7px;
-  }
-
-  .chat-window {
-    height: 420px;
-    overflow-y: auto;
-    border: 1px solid #e1e5ec;
-    border-radius: 8px;
-    padding: 12px;
-    background: #fafbfd;
-  }
-
-  .msg {
-    max-width: 80%;
-    margin: 8px 0;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-  }
-
-  .msg.user {
-    background: #142850;
-    color: white;
-    margin-left: auto;
-  }
-
-  .msg.bot {
-    background: #e9edf5;
-    color: #1c2430;
-  }
-
-  .msg.bot.ungrounded {
-    background: #fff1e6;
-    border: 1px solid #f0c29b;
-  }
-
-  .sources {
-    margin-top: 8px;
-    font-size: 11px;
-    color: #555;
-  }
-
-  .sources-title {
-    font-weight: bold;
-    margin-bottom: 4px;
-  }
-
-  .sources span {
-    display: inline-block;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    padding: 3px 8px;
-    margin-right: 6px;
-    margin-bottom: 4px;
-  }
-
-  .message-meta {
-    margin-top: 6px;
-    font-size: 10px;
-    color: #666;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  input,
-  select,
-  textarea {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-
-  input[type=text] {
-    flex: 1;
-  }
-
-  button {
-    cursor: pointer;
-  }
-
-  button.send {
-    background: #142850;
-    color: white;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 6px;
-  }
-
-  button.send:hover {
-    opacity: 0.9;
-  }
-
-  button.secondary {
-    background: #e1e5ec;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    margin-right: 6px;
-  }
-
-  button.secondary:hover {
-    background: #d4d9e2;
-  }
-
-  button.danger {
-    background: #a33;
-    color: white;
-    border: none;
-    padding: 7px 14px;
-    border-radius: 6px;
-  }
-
-  button.small {
-    padding: 5px 9px;
-    font-size: 11px;
-  }
-
-  .new-conversation {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  td,
-  th {
-    text-align: left;
-    padding: 6px;
-    border-bottom: 1px solid #eee;
-  }
-
-  .badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    color: white;
-  }
-
-  .badge.DRAFT {
-    background: #888;
-  }
-
-  .badge.APPROVED {
-    background: #c08a00;
-  }
-
-  .badge.ACTIVE_IN_RAG {
-    background: #1a8f4c;
-  }
-
-  .badge.ARCHIVED {
-    background: #a33;
-  }
-
-  .error {
-    color: #a33;
-    font-size: 13px;
-  }
-
-  .success {
-    color: #1a8f4c;
-    font-size: 13px;
-  }
-
-  .hint {
-    color: #666;
-    font-size: 12px;
-  }
-
-  .status-text {
-    font-size: 12px;
-    color: #666;
-    margin-top: 8px;
-  }
-
-  form.inline {
-    display: grid;
-    gap: 8px;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  form.inline textarea {
-    grid-column: 1 / -1;
-    min-height: 80px;
-  }
-
-  form.inline button {
-    grid-column: 1 / -1;
-  }
-
-  .chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .chat-header h3 {
-    margin: 0;
-  }
-
-  .empty {
-    text-align: center;
-    color: #777;
-    padding: 30px 10px;
-    font-size: 13px;
-  }
-
-  @media (max-width: 800px) {
-    .layout {
-      grid-template-columns: 1fr;
-    }
-
-    .conversation-list {
-      max-height: 220px;
-    }
-
-    .chat-window {
-      height: 380px;
-    }
-
-    header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    nav {
-      width: 100%;
-    }
-
-    nav button {
-      margin-left: 0;
-      margin-right: 6px;
-      margin-bottom: 5px;
-    }
-  }
+  :root { --zy-navy:#142850; --zy-navy-2:#1d3a73; --zy-accent:#2f6fed; --zy-bg:#f1f4fa; }
+  body { background:var(--zy-bg); color:#1c2430; font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif; }
+  .zy-navbar { background:linear-gradient(90deg,var(--zy-navy),var(--zy-navy-2)); box-shadow:0 2px 12px rgba(20,40,80,.25); }
+  .zy-logo { height:40px; width:40px; object-fit:contain; background:#fff; border-radius:10px; padding:4px; }
+  .zy-brand-title { font-weight:700; letter-spacing:.2px; line-height:1.1; }
+  .zy-brand-sub { font-size:11px; opacity:.75; font-weight:400; }
+  .zy-navbar .nav-link { color:rgba(255,255,255,.8); border-radius:8px; padding:.45rem .85rem; cursor:pointer; }
+  .zy-navbar .nav-link:hover { color:#fff; background:rgba(255,255,255,.12); }
+  .zy-navbar .nav-link.active { color:var(--zy-navy); background:#fff; font-weight:600; }
+  .card { border:0; border-radius:14px; box-shadow:0 2px 10px rgba(20,40,80,.07); }
+  .conv-list { max-height:calc(100vh - 290px); min-height:120px; overflow-y:auto; }
+  .conv { padding:10px 12px; border-radius:10px; border:1px solid transparent; background:#f5f7fb; margin-bottom:6px; cursor:pointer; transition:background .15s; }
+  .conv:hover { background:#e8eefb; }
+  .conv.active { background:#e6eeff; border-color:var(--zy-accent); }
+  .conv-title { font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .conv-date { font-size:11px; color:#7a8497; }
+  .conv .btn { --bs-btn-padding-y:.1rem; --bs-btn-padding-x:.45rem; --bs-btn-font-size:.72rem; }
+  .chat-window { height:calc(100vh - 380px); min-height:340px; overflow-y:auto; background:#f8faff; border:1px solid #e3e9f5; border-radius:12px; padding:16px; }
+  .row-msg { display:flex; gap:10px; margin-bottom:14px; align-items:flex-start; }
+  .row-msg.user { flex-direction:row-reverse; }
+  .avatar { flex:0 0 34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .avatar.bot { background:#fff; border:1px solid #dbe3f3; overflow:hidden; }
+  .avatar.bot img { width:22px; height:22px; object-fit:contain; }
+  .avatar.user { background:var(--zy-navy); color:#fff; }
+  .bubble { max-width:78%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .bubble.user { background:var(--zy-navy); color:#fff; border-top-right-radius:4px; }
+  .bubble.bot { background:#fff; border:1px solid #e1e8f5; border-top-left-radius:4px; }
+  .bubble.bot.ungrounded { background:#fff4ea; border-color:#f0c29b; }
+  .src-chip { display:inline-block; font-size:11px; background:#eef3ff; color:#2a4a9a; border-radius:20px; padding:2px 10px; margin:4px 6px 0 0; white-space:normal; }
+  .meta { font-size:11px; color:#7a8497; margin-top:6px; white-space:normal; }
+  .empty { text-align:center; color:#8892a6; padding:36px 10px; font-size:14px; }
+  .empty i { font-size:34px; display:block; margin-bottom:8px; color:#b5c2de; }
+  .badge-status { font-weight:500; }
+  .stat { border-left:4px solid var(--zy-accent); }
+  .stat .v { font-size:24px; font-weight:700; }
+  .bar { background:var(--zy-accent); height:12px; border-radius:6px; }
+  textarea.form-control { min-height:110px; }
+  .btn-zy { background:var(--zy-navy); border-color:var(--zy-navy); color:#fff; }
+  .btn-zy:hover { background:var(--zy-navy-2); border-color:var(--zy-navy-2); color:#fff; }
+  *:focus-visible { outline:2px solid var(--zy-accent); outline-offset:2px; }
 </style>
 </head>
-
 <body>
 
-<header>
-  <h1>Zynora - Zyngram Internal Assistant <small style="font-size:12px;font-weight:normal">v1.1</small></h1>
-  <nav id="nav"></nav>
-</header>
+<nav class="navbar navbar-expand-md navbar-dark zy-navbar sticky-top">
+  <div class="container-xl">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#" onclick="setView('chat');return false;">
+      <img src="./assets/zyngram_logo1.ico" class="zy-logo" alt="Zyngram logo" onerror="this.style.display='none'">
+      <span class="d-flex flex-column">
+        <span class="zy-brand-title">Zynora</span>
+        <span class="zy-brand-sub">Zyngram Internal Assistant</span>
+      </span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="Toggle menu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-md-center gap-1" id="nav"></ul>
+    </div>
+  </div>
+</nav>
 
-<div class="wrap" id="app"></div>
+<main class="container-xl py-4" id="app"></main>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-
 // Same-origin when served by the backend (production); localhost:5050 when opened as a file.
 const API_BASE = window.ZYNORA_API_BASE ||
   (location.protocol === "file:" ? "http://localhost:5050" : location.origin);
+const LOGO = "./assets/zyngram_logo1.ico";
 
 let state = {
   view: "chat",
-
   token: localStorage.getItem("zynora_token") || null,
-
   role: localStorage.getItem("zynora_role") || null,
-
   userId: localStorage.getItem("zynora_user_id") || null,
-
   sessionId: localStorage.getItem("zynora_last_conv") || null,
-
   conversations: [],
-
   chatLog: [],
-
   loading: false
 };
 
-
-/* =========================================================
-   API
-========================================================= */
-
+/* ---------- API ---------- */
 async function api(path, { method = "GET", body } = {}) {
-
-  const headers = {
-    "Content-Type": "application/json"
-  };
-
-  if (state.token) {
-    headers["Authorization"] = "Bearer " + state.token;
-  }
-
-  const res = await fetch(
-    API_BASE + path,
-    {
-      method,
-      headers,
-      body: body
-        ? JSON.stringify(body)
-        : undefined
-    }
-  );
-
+  const headers = { "Content-Type": "application/json" };
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(
-      data.error || "Request failed."
-    );
-  }
-
+  if (!res.ok) throw new Error(data.error || "Request failed.");
   return data;
 }
 
-
-/* =========================================================
-   RENDER
-========================================================= */
-
+/* ---------- Render / Nav ---------- */
 function render() {
-
   renderNav();
-
   const app = document.getElementById("app");
-
-  if (state.view === "login") {
-
-    app.innerHTML = loginView();
-
-  } else if (state.view === "admin") {
-
-    renderAdminView(app);
-
-  } else if (state.view === "monitor") {
-
-    renderMonitorView(app);
-
-  } else {
-
-    renderChatPage(app);
-
-  }
-
-  if (state.view === "chat") {
-
-    setTimeout(scrollChatToBottom, 0);
-
-  }
+  if (state.view === "login") app.innerHTML = loginView();
+  else if (state.view === "admin") renderAdminView(app);
+  else if (state.view === "monitor") renderMonitorView(app);
+  else renderChatPage(app);
+  if (state.view === "chat") setTimeout(scrollChatToBottom, 0);
 }
-
-
-/* =========================================================
-   NAVIGATION
-========================================================= */
 
 function renderNav() {
-
-  const nav = document.getElementById("nav");
-
-  nav.innerHTML = `
-
-    <button
-      onclick="setView('chat')"
-      class="${state.view === "chat" ? "active" : ""}">
-      Chat
-    </button>
-
-    ${
-      state.role === "admin"
-        ? `
-          <button
-            onclick="setView('admin')"
-            class="${state.view === "admin" ? "active" : ""}">
-            Admin Knowledge Panel
-          </button>
-          <button
-            onclick="setView('monitor')"
-            class="${state.view === "monitor" ? "active" : ""}">
-            Monitoring
-          </button>
-        `
-        : ""
-    }
-
-    ${
-      state.token
-        ? `
-          <button onclick="logout()">
-            Logout (${escapeHtml(state.role || "")})
-          </button>
-        `
-        : `
-          <button
-            onclick="setView('login')"
-            class="${state.view === "login" ? "active" : ""}">
-            Staff / Admin Login
-          </button>
-        `
-    }
-
-  `;
+  const item = (v, icon, label) =>
+    `<li class="nav-item"><a class="nav-link ${state.view === v ? "active" : ""}" onclick="setView('${v}')"><i class="bi ${icon} me-1"></i>${label}</a></li>`;
+  document.getElementById("nav").innerHTML =
+    item("chat", "bi-chat-dots", "Chat") +
+    (state.role === "admin"
+      ? item("admin", "bi-journal-text", "Knowledge Panel") + item("monitor", "bi-activity", "Monitoring")
+      : "") +
+    (state.token
+      ? `<li class="nav-item ms-md-2"><button class="btn btn-sm btn-outline-light" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i>Logout (${escapeHtml(state.role || "")})</button></li>`
+      : item("login", "bi-person-lock", "Staff / Admin Login"));
 }
-
 
 function setView(view) {
-
   state.view = view;
-
   render();
-
-  if (view === "chat" && state.token) {
-
-    loadConversations();
-
-  }
-
+  const m = document.getElementById("navMenu");
+  if (m && m.classList.contains("show")) bootstrap.Collapse.getOrCreateInstance(m).hide();
+  if (view === "chat" && state.token) loadConversations();
 }
-
-
-/* =========================================================
-   LOGOUT
-========================================================= */
 
 function logout() {
-
-  state.token = null;
-  state.role = null;
-  state.userId = null;
-
-  state.sessionId = null;
-  state.conversations = [];
-  state.chatLog = [];
-
-  localStorage.removeItem("zynora_token");
-  localStorage.removeItem("zynora_role");
-  localStorage.removeItem("zynora_user_id");
-  localStorage.removeItem("zynora_last_conv");
-
+  state.token = state.role = state.userId = state.sessionId = null;
+  state.conversations = []; state.chatLog = [];
+  ["zynora_token", "zynora_role", "zynora_user_id", "zynora_last_conv"].forEach(k => localStorage.removeItem(k));
   state.view = "chat";
-
   render();
 }
 
-
-/* =========================================================
-   CHAT PAGE
-========================================================= */
-
+/* ---------- Chat page ---------- */
 function renderChatPage(app) {
-
+  const disabled = !state.sessionId || !state.token ? "disabled" : "";
   app.innerHTML = `
-
-    <div class="layout">
-
-      <!-- SIDEBAR -->
-
-      <div class="sidebar">
-
-        <div class="card">
-
-          <h3>Conversations</h3>
-
-          ${
-            state.token
-              ? `
-                <button
-                  class="send new-conversation"
-                  onclick="createConversation()">
-                  + New Conversation
-                </button>
-              `
-              : `
-                <p class="hint">
-                  Login to create and save conversations.
-                </p>
-              `
-          }
-
-          <div
-            id="conversationList"
-            class="conversation-list">
-
-            <div class="empty">
-              ${
-                state.token
-                  ? "Loading conversations..."
-                  : "No conversations"
-              }
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- CHAT -->
-
-      <div>
-
-        <div class="card">
-
-          <div class="chat-header">
-
-            <div>
-
-              <h3>
-                ${
-                  getCurrentConversationTitle()
-                }
-              </h3>
-
-              <div class="hint">
-                ${
-                  state.sessionId
-                    ? "Persistent conversation"
-                    : "Create a conversation to start"
-                }
-              </div>
-
-            </div>
-
-            ${
-              state.sessionId
-                ? `
-                  <button
-                    class="secondary"
-                    onclick="clearConversation()">
-                    Clear
-                  </button>
-                `
-                : ""
-            }
-
-          </div>
-
-
-          <p class="hint">
-            Zynora only answers from Zyngram's approved,
-            active knowledge base. It will never guess,
-            it will never use internet.
-          </p>
-
-
-          <div
-            class="chat-window"
-            id="chatWindow">
-
-            ${
-              state.chatLog.length === 0
-                ? `
-                  <div class="empty">
-                    ${
-                      state.sessionId
-                        ? "Start asking a question."
-                        : "Create a new conversation first."
-                    }
-                  </div>
-                `
-                : state.chatLog.map(renderMsg).join("")
-            }
-
-          </div>
-
-
-          <div class="input-row">
-
-            <input
-              type="text"
-              id="chatInput"
-              placeholder="${
-                state.sessionId
-                  ? "Ask Zynora something..."
-                  : "Create a conversation first"
-              }"
-              ${
-                !state.sessionId || !state.token
-                  ? "disabled"
-                  : ""
-              }
-              onkeydown="
-                if(event.key === 'Enter') sendChat()
-              "
-            />
-
-            <button
-              class="send"
-              onclick="sendChat()"
-              ${
-                !state.sessionId || !state.token
-                  ? "disabled"
-                  : ""
-              }>
-              Send
-            </button>
-
-          </div>
-
-
-          <div class="status-text" id="chatStatus"></div>
-
-        </div>
-
-      </div>
-
+  <div class="row g-3">
+    <div class="col-lg-4 col-xl-3">
+      <div class="card"><div class="card-body">
+        <h6 class="fw-bold mb-3"><i class="bi bi-chat-square-text me-2"></i>Conversations</h6>
+        ${state.token
+          ? `<button class="btn btn-zy w-100 mb-3" onclick="createConversation()"><i class="bi bi-plus-lg me-1"></i>New conversation</button>`
+          : `<div class="alert alert-info py-2 small">Log in to create and save conversations.</div>`}
+        <div id="conversationList" class="conv-list"><div class="empty">${state.token ? "Loading conversations..." : "No conversations"}</div></div>
+      </div></div>
     </div>
-
-  `;
-
-  if (state.token) {
-
-    loadConversations();
-
-  }
-
-}
-
-
-/* =========================================================
-   CONVERSATIONS
-========================================================= */
-
-async function loadConversations() {
-
-  if (!state.token) return;
-
-  try {
-
-    state.conversations =
-      await api("/api/zynora/conversations");
-
-    renderConversationList();
-
-    /*
-      If saved conversation exists,
-      load it.
-    */
-
-    if (state.sessionId) {
-
-      const exists =
-        state.conversations.some(
-          (c) => c.id === state.sessionId
-        );
-
-      if (exists) {
-
-        await loadConversation(
-          state.sessionId,
-          false
-        );
-
-      } else {
-
-        state.sessionId = null;
-
-        localStorage.removeItem(
-          "zynora_last_conv"
-        );
-
-        state.chatLog = [];
-
-        render();
-
-      }
-
-    }
-
-  } catch (err) {
-
-    const list =
-      document.getElementById(
-        "conversationList"
-      );
-
-    if (list) {
-
-      list.innerHTML = `
-        <div class="error">
-          ${escapeHtml(err.message)}
+    <div class="col-lg-8 col-xl-9">
+      <div class="card"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h5 class="mb-0 fw-bold">${escapeHtml(getCurrentConversationTitle())}</h5>
+            <div class="text-muted small">${state.sessionId ? "Persistent conversation" : "Create a conversation to start"}</div>
+          </div>
+          ${state.sessionId ? `<button class="btn btn-sm btn-outline-secondary" onclick="clearConversation()"><i class="bi bi-eraser me-1"></i>Clear</button>` : ""}
         </div>
-      `;
-
-    }
-
-  }
-
+        <div class="alert alert-light border small py-2 mb-3"><i class="bi bi-shield-check text-success me-1"></i>Zynora answers only from Zyngram's approved, active knowledge base. It never guesses and never uses the internet.</div>
+        <div class="chat-window" id="chatWindow">
+          ${state.chatLog.length === 0
+            ? `<div class="empty"><i class="bi bi-stars"></i>${state.sessionId ? "Ask your first question." : "Create a new conversation first."}</div>`
+            : state.chatLog.map(renderMsg).join("")}
+        </div>
+        <div class="input-group mt-3">
+          <input type="text" class="form-control form-control-lg" id="chatInput" autocomplete="off"
+            placeholder="${state.sessionId ? "Ask Zynora something..." : "Create a conversation first"}" ${disabled}
+            onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="btn btn-zy px-4" onclick="sendChat()" ${disabled}><i class="bi bi-send-fill"></i><span class="d-none d-sm-inline ms-2">Send</span></button>
+        </div>
+        <div class="small text-muted mt-2" id="chatStatus"></div>
+      </div></div>
+    </div>
+  </div>`;
+  if (state.token) loadConversations();
 }
 
+/* ---------- Conversations ---------- */
+async function loadConversations() {
+  if (!state.token) return;
+  try {
+    state.conversations = await api("/api/zynora/conversations");
+    renderConversationList();
+    if (state.sessionId) {
+      if (state.conversations.some(c => c.id === state.sessionId)) {
+        await loadConversation(state.sessionId, false);
+      } else {
+        state.sessionId = null;
+        localStorage.removeItem("zynora_last_conv");
+        state.chatLog = [];
+        render();
+      }
+    }
+  } catch (err) {
+    const list = document.getElementById("conversationList");
+    if (list) list.innerHTML = `<div class="text-danger small">${escapeHtml(err.message)}</div>`;
+  }
+}
 
 function renderConversationList() {
-
-  const list =
-    document.getElementById(
-      "conversationList"
-    );
-
+  const list = document.getElementById("conversationList");
   if (!list) return;
-
-  if (!state.conversations.length) {
-
-    list.innerHTML = `
-      <div class="empty">
-        No conversations yet.
+  if (!state.conversations.length) { list.innerHTML = `<div class="empty">No conversations yet.</div>`; return; }
+  list.innerHTML = state.conversations.map(c => `
+    <div class="conv ${c.id === state.sessionId ? "active" : ""}" onclick="loadConversation('${c.id}')">
+      <div class="conv-title">${escapeHtml(c.title || "New conversation")}</div>
+      <div class="conv-date">${formatDate(c.updatedAt || c.createdAt)}</div>
+      <div class="mt-2 d-flex gap-1">
+        <button class="btn btn-outline-secondary" onclick="event.stopPropagation();renameConversation('${c.id}')"><i class="bi bi-pencil"></i> Rename</button>
+        <button class="btn btn-outline-danger" onclick="event.stopPropagation();deleteConversation('${c.id}')"><i class="bi bi-trash"></i> Delete</button>
       </div>
-    `;
-
-    return;
-  }
-
-
-  list.innerHTML =
-    state.conversations.map((conversation) => {
-
-      const active =
-        conversation.id === state.sessionId;
-
-      return `
-
-        <div
-          class="conversation-item ${active ? "active" : ""}"
-          onclick="loadConversation('${conversation.id}')">
-
-          <div class="conversation-title">
-            ${escapeHtml(
-              conversation.title ||
-              "New conversation"
-            )}
-          </div>
-
-          <div class="conversation-date">
-            ${formatDate(
-              conversation.updatedAt ||
-              conversation.createdAt
-            )}
-          </div>
-
-          <div class="conversation-actions">
-
-            <button
-              class="secondary small"
-              onclick="
-                event.stopPropagation();
-                renameConversation('${conversation.id}');
-              ">
-              Rename
-            </button>
-
-            <button
-              class="danger small"
-              onclick="
-                event.stopPropagation();
-                deleteConversation('${conversation.id}');
-              ">
-              Delete
-            </button>
-
-          </div>
-
-        </div>
-
-      `;
-
-    }).join("");
-
+    </div>`).join("");
 }
-
-
-/* =========================================================
-   CREATE CONVERSATION
-========================================================= */
 
 async function createConversation() {
-
-  if (!state.token) {
-
-    setView("login");
-
-    return;
-
-  }
-
+  if (!state.token) { setView("login"); return; }
   try {
-
-    const result =
-      await api(
-        "/api/zynora/conversations",
-        {
-          method: "POST",
-          body: {
-            title: "New conversation"
-          }
-        }
-      );
-
-    const conversation =
-      result;
-
-    state.sessionId =
-      conversation.id;
-
-    localStorage.setItem(
-      "zynora_last_conv",
-      state.sessionId
-    );
-
+    const conversation = await api("/api/zynora/conversations", { method: "POST", body: { title: "New conversation" } });
+    state.sessionId = conversation.id;
+    localStorage.setItem("zynora_last_conv", state.sessionId);
     state.chatLog = [];
-
     await loadConversations();
-
     render();
-
-  } catch (err) {
-
-    alert(
-      "Could not create conversation: " +
-      err.message
-    );
-
-  }
-
+  } catch (err) { alert("Could not create conversation: " + err.message); }
 }
 
-
-/* =========================================================
-   LOAD CONVERSATION
-========================================================= */
-
-async function loadConversation(
-  conversationId,
-  rerender = true
-) {
-
+async function loadConversation(conversationId, rerender = true) {
   try {
-
-    state.sessionId =
-      conversationId;
-
-    localStorage.setItem(
-      "zynora_last_conv",
-      conversationId
-    );
-
-    const history =
-      await api(
-        `/api/zynora/conversations/${encodeURIComponent(conversationId)}`
-      );
-
-    state.chatLog =
-      (history || []).map((item) => ({
-
-        role:
-          item.role === "user"
-            ? "user"
-            : "bot",
-
-        text:
-          item.message || "",
-
-        sources:
-          item.sources || [],
-
-        grounded:
-          item.grounded !== false,
-
-        confidence:
-          item.confidence,
-
-        responseTimeMs:
-          item.responseTimeMs
-
-      }));
-
-    if (rerender) {
-
-      render();
-
-    }
-
-  } catch (err) {
-
-    alert(
-      "Could not load conversation: " +
-      err.message
-    );
-
-  }
-
+    state.sessionId = conversationId;
+    localStorage.setItem("zynora_last_conv", conversationId);
+    const history = await api(`/api/zynora/conversations/${encodeURIComponent(conversationId)}`);
+    state.chatLog = (history || []).map(item => ({
+      role: item.role === "user" ? "user" : "bot",
+      text: item.message || "",
+      sources: item.sources || [],
+      grounded: item.grounded !== false,
+      confidence: item.confidence,
+      responseTimeMs: item.responseTimeMs
+    }));
+    if (rerender) render();
+  } catch (err) { alert("Could not load conversation: " + err.message); }
 }
-
-
-/* =========================================================
-   RENAME CONVERSATION
-========================================================= */
 
 async function renameConversation(id) {
-
-  const conversation =
-    state.conversations.find(
-      (c) => c.id === id
-    );
-
-  const currentTitle =
-    conversation?.title ||
-    "New conversation";
-
-  const title =
-    prompt(
-      "Enter conversation title:",
-      currentTitle
-    );
-
+  const c = state.conversations.find(c => c.id === id);
+  const title = prompt("Enter conversation title:", c?.title || "New conversation");
   if (title === null) return;
-
-  if (!title.trim()) {
-
-    alert("Title is required.");
-
-    return;
-
-  }
-
+  if (!title.trim()) { alert("Title is required."); return; }
   try {
-
-    await api(
-      `/api/zynora/conversations/${encodeURIComponent(id)}`,
-      {
-        method: "PATCH",
-        body: {
-          title: title.trim()
-        }
-      }
-    );
-
+    await api(`/api/zynora/conversations/${encodeURIComponent(id)}`, { method: "PATCH", body: { title: title.trim() } });
     await loadConversations();
-
     render();
-
-  } catch (err) {
-
-    alert(
-      "Could not rename conversation: " +
-      err.message
-    );
-
-  }
-
+  } catch (err) { alert("Could not rename conversation: " + err.message); }
 }
-
-
-/* =========================================================
-   DELETE CONVERSATION
-========================================================= */
 
 async function deleteConversation(id) {
-
-  const conversation =
-    state.conversations.find(
-      (c) => c.id === id
-    );
-
-  const title =
-    conversation?.title ||
-    "this conversation";
-
-  const confirmed =
-    confirm(
-      `Delete "${title}"?\n\nThis will delete the conversation and its chat history.`
-    );
-
-  if (!confirmed) return;
-
+  const c = state.conversations.find(c => c.id === id);
+  if (!confirm(`Delete "${c?.title || "this conversation"}"?\n\nThis will delete the conversation and its chat history.`)) return;
   try {
-
-    await api(
-      `/api/zynora/conversations/${encodeURIComponent(id)}`,
-      {
-        method: "DELETE"
-      }
-    );
-
+    await api(`/api/zynora/conversations/${encodeURIComponent(id)}`, { method: "DELETE" });
     if (state.sessionId === id) {
-
-      state.sessionId = null;
-      state.chatLog = [];
-
-      localStorage.removeItem(
-        "zynora_last_conv"
-      );
-
+      state.sessionId = null; state.chatLog = [];
+      localStorage.removeItem("zynora_last_conv");
     }
-
     await loadConversations();
-
     render();
-
-  } catch (err) {
-
-    alert(
-      "Could not delete conversation: " +
-      err.message
-    );
-
-  }
-
+  } catch (err) { alert("Could not delete conversation: " + err.message); }
 }
-
-
-/* =========================================================
-   CLEAR CURRENT CONVERSATION
-========================================================= */
 
 async function clearConversation() {
-
   if (!state.sessionId) return;
-
-  const confirmed =
-    confirm(
-      "Clear all messages from this conversation?"
-    );
-
-  if (!confirmed) return;
-
+  if (!confirm("Clear all messages from this conversation?")) return;
   try {
-
-    await api(
-      `/api/zynora/conversations/${encodeURIComponent(state.sessionId)}/clear`,
-      {
-        method: "POST"
-      }
-    );
-
+    await api(`/api/zynora/conversations/${encodeURIComponent(state.sessionId)}/clear`, { method: "POST" });
     state.chatLog = [];
-
     render();
-
-  } catch (err) {
-
-    alert(
-      "Could not clear conversation: " +
-      err.message
-    );
-
-  }
-
+  } catch (err) { alert("Could not clear conversation: " + err.message); }
 }
 
-
-/* =========================================================
-   CHAT MESSAGE
-========================================================= */
-
+/* ---------- Messages ---------- */
 function renderMsg(m) {
-  return renderMsgRaw(m).replace(/>\s+</g, "><").replace(/\s{2,}/g, " ").trim();
-}
-
-function renderMsgRaw(m) {
-
   if (m.role === "user") {
-
-    return `
-      <div class="msg user">
-        ${escapeHtml(m.text)}
-      </div>
-    `;
-
+    return `<div class="row-msg user"><div class="avatar user"><i class="bi bi-person-fill"></i></div><div class="bubble user">${escapeHtml(m.text)}</div></div>`;
   }
-
-
-  const grounded =
-    m.grounded;
-
-  const sources =
-    (m.sources || [])
-      .map(
-        (s) => `
-          <span>
-            ${escapeHtml(s.title || "Knowledge source")}
-            ${
-              s.category
-                ? ` (${escapeHtml(s.category)})`
-                : ""
-            }
-          </span>
-        `
-      )
-      .join("");
-
-
-  const meta =
-    m.responseTimeMs
-      ? `
-        <div class="message-meta">
-          Confidence: ${
-            escapeHtml(m.confidence || "N/A")
-          }
-          |
-          Response time: ${
-            Number(m.responseTimeMs)
-          } ms ${m.usedContext ? "| Used conversation context" : ""} ${m.grounded ? "| Grounded" : "| Not grounded"}
-        </div>
-      `
-      : "";
-
-
-  return `
-
-    <div class="msg bot ${
-      grounded ? "" : "ungrounded"
-    }">
-
-      ${escapeHtml(m.text)}
-
-      ${
-        sources
-          ? `
-            <div class="sources">
-
-              <div class="sources-title">
-                Sources
-              </div>
-
-              ${sources}
-
-            </div>
-          `
-          : ""
-      }
-
-      ${meta}
-
-    </div>
-
-  `;
-
+  const sources = (m.sources || []).map(s =>
+    `<span class="src-chip"><i class="bi bi-file-earmark-text me-1"></i>${escapeHtml(s.title || "Knowledge source")}${s.category ? ` (${escapeHtml(s.category)})` : ""}</span>`).join("");
+  const meta = m.responseTimeMs
+    ? `<div class="meta">Confidence: ${escapeHtml(m.confidence || "N/A")} | Response time: ${Number(m.responseTimeMs)} ms${m.usedContext ? " | Used conversation context" : ""} | ${m.grounded ? "Grounded" : "Not grounded"}</div>` : "";
+  return `<div class="row-msg"><div class="avatar bot"><img src="${LOGO}" alt="" onerror="this.replaceWith(document.createTextNode('Z'))"></div>` +
+    `<div class="bubble bot ${m.grounded ? "" : "ungrounded"}">${escapeHtml(m.text)}${sources ? `<div class="mt-2 pt-2 border-top"><div class="small fw-semibold text-muted">Sources</div>${sources}</div>` : ""}${meta}</div></div>`;
 }
-
 
 function scrollChatToBottom() {
-
-  const el =
-    document.getElementById(
-      "chatWindow"
-    );
-
-  if (el) {
-
-    el.scrollTop =
-      el.scrollHeight;
-
-  }
-
+  const el = document.getElementById("chatWindow");
+  if (el) el.scrollTop = el.scrollHeight;
 }
-
-
-/* =========================================================
-   SEND CHAT
-========================================================= */
 
 async function sendChat() {
-
-  const input =
-    document.getElementById(
-      "chatInput"
-    );
-
+  const input = document.getElementById("chatInput");
   if (!input) return;
-
-  const text =
-    input.value.trim();
-
+  const text = input.value.trim();
   if (!text) return;
+  if (!state.token) { alert("Please login first."); setView("login"); return; }
+  if (!state.sessionId) { alert("Please create a conversation first."); return; }
 
-
-  if (!state.token) {
-
-    alert("Please login first.");
-
-    setView("login");
-
-    return;
-
-  }
-
-
-  if (!state.sessionId) {
-
-    alert(
-      "Please create a conversation first."
-    );
-
-    return;
-
-  }
-
-
-  state.chatLog.push({
-
-    role: "user",
-
-    text
-
-  });
-
+  state.chatLog.push({ role: "user", text });
   input.value = "";
-
   render();
-
-
-  const status =
-    document.getElementById(
-      "chatStatus"
-    );
-
-  if (status) {
-
-    status.textContent =
-      "Zynora is thinking...";
-
-  }
-
+  const status = document.getElementById("chatStatus");
+  if (status) status.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Zynora is thinking...`;
 
   try {
-
-    const result =
-      await api(
-        "/api/zynora/chat",
-        {
-          method: "POST",
-
-          body: {
-            message: text,
-
-            conversationId:
-              state.sessionId
-          }
-        }
-      );
-
-
+    const r = await api("/api/zynora/chat", { method: "POST", body: { message: text, conversationId: state.sessionId } });
     state.chatLog.push({
-
-      role: "bot",
-
-      text:
-        result.answer,
-
-      sources:
-        result.sources || [],
-
-      grounded:
-        result.grounded,
-
-      confidence:
-        result.confidence,
-
-      responseTimeMs:
-        result.responseTimeMs,
-
-      usedContext:
-        result.usedContext
-
+      role: "bot", text: r.answer, sources: r.sources || [], grounded: r.grounded,
+      confidence: r.confidence, responseTimeMs: r.responseTimeMs, usedContext: r.usedContext
     });
-
-
     await loadConversations();
-
-
   } catch (err) {
-
-    state.chatLog.push({
-
-      role: "bot",
-
-      text:
-        "Error: " + err.message,
-
-      grounded: false
-
-    });
-
+    state.chatLog.push({ role: "bot", text: "Error: " + err.message, grounded: false });
   }
-
-
   render();
-
 }
 
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
+/* ---------- Login ---------- */
 function loginView() {
-
   return `
-
-    <div class="wrap">
-
-      <div
-        class="card"
-        style="max-width:380px; margin:40px auto;">
-
-        <h3>Staff / Admin Login</h3>
-
-        <p class="hint">
-          Login is required to create and access
-          persistent conversations.
-        </p>
-
-        <form
-          onsubmit="doLogin(event)"
-          style="
-            display:flex;
-            flex-direction:column;
-            gap:8px;
-          ">
-
-          <input
-            type="email"
-            id="loginEmail"
-            placeholder="Email"
-            required
-          />
-
-          <input
-            type="password"
-            id="loginPassword"
-            placeholder="Password"
-            required
-          />
-
-          <button
-            class="send"
-            type="submit">
-            Login
-          </button>
-
-          <div
-            class="error"
-            id="loginError">
-          </div>
-
-        </form>
-
+  <div class="row justify-content-center"><div class="col-md-6 col-lg-4">
+    <div class="card mt-4"><div class="card-body p-4">
+      <div class="text-center mb-3">
+        <img src="${LOGO}" alt="Zyngram" style="height:64px" onerror="this.style.display='none'">
+        <h4 class="fw-bold mt-2 mb-1">Staff / Admin Login</h4>
+        <p class="text-muted small mb-0">Login is required to create and access persistent conversations.</p>
       </div>
-
-    </div>
-
-  `;
-
+      <form onsubmit="doLogin(event)" class="d-grid gap-3">
+        <div class="form-floating"><input type="email" class="form-control" id="loginEmail" placeholder="Email" required><label for="loginEmail">Email</label></div>
+        <div class="form-floating"><input type="password" class="form-control" id="loginPassword" placeholder="Password" required><label for="loginPassword">Password</label></div>
+        <button class="btn btn-zy btn-lg" type="submit">Login</button>
+        <div class="text-danger small" id="loginError"></div>
+      </form>
+    </div></div>
+  </div></div>`;
 }
-
 
 async function doLogin(e) {
-
   e.preventDefault();
-
-
-  const email =
-    document.getElementById(
-      "loginEmail"
-    ).value.trim();
-
-  const password =
-    document.getElementById(
-      "loginPassword"
-    ).value;
-
-
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
   try {
-
-    const result =
-      await api(
-        "/api/auth/login",
-        {
-          method: "POST",
-
-          body: {
-            email,
-            password
-          }
-        }
-      );
-
-
-    state.token =
-      result.token;
-
-    state.role =
-      result.user.role;
-
-    state.userId =
-      result.user.id ||
-      result.user.userId ||
-      null;
-
-
-    localStorage.setItem(
-      "zynora_token",
-      state.token
-    );
-
-    localStorage.setItem(
-      "zynora_role",
-      state.role
-    );
-
-
-    if (state.userId) {
-
-      localStorage.setItem(
-        "zynora_user_id",
-        state.userId
-      );
-
-    }
-
-
-    state.sessionId =
-      localStorage.getItem(
-        "zynora_last_conv"
-      ) || null;
-
+    const r = await api("/api/auth/login", { method: "POST", body: { email, password } });
+    state.token = r.token;
+    state.role = r.user.role;
+    state.userId = r.user.id || r.user.userId || null;
+    localStorage.setItem("zynora_token", state.token);
+    localStorage.setItem("zynora_role", state.role);
+    if (state.userId) localStorage.setItem("zynora_user_id", state.userId);
+    state.sessionId = localStorage.getItem("zynora_last_conv") || null;
     state.chatLog = [];
-
-
-    state.view =
-      state.role === "admin"
-        ? "admin"
-        : "chat";
-
-
+    state.view = state.role === "admin" ? "admin" : "chat";
     render();
-
-
   } catch (err) {
-
-    const error =
-      document.getElementById(
-        "loginError"
-      );
-
-    if (error) {
-
-      error.textContent =
-        err.message;
-
-    }
-
+    const el = document.getElementById("loginError");
+    if (el) el.textContent = err.message;
   }
-
 }
 
-
-/* =========================================================
-   ADMIN VIEW
-========================================================= */
-
+/* ---------- Admin ---------- */
 let adminDocs = [];
+let adminFilter = { status: "", category: "" };
+const CATEGORIES = ["Company", "Services", "Franchise", "Policies", "FAQ"];
+const FORMATS = ["txt", "markdown", "json"];
+const STATUS_CLASS = { DRAFT: "bg-secondary", APPROVED: "bg-warning text-dark", ACTIVE_IN_RAG: "bg-success", ARCHIVED: "bg-danger" };
 
-let adminFilter = {
-  status: "",
-  category: ""
-};
+function docForm(p, d, submitFn, submitLabel, extra = "") {
+  d = d || {};
+  return `
+  <form class="row g-2" onsubmit="${submitFn}">
+    <div class="col-md-6"><input type="text" class="form-control" id="${p}Title" placeholder="Title" value="${escapeHtml(d.title || "")}" required></div>
+    <div class="col-md-6"><select class="form-select" id="${p}Category" required>
+      <option value="">Category...</option>
+      ${CATEGORIES.map(c => `<option ${c === d.category ? "selected" : ""}>${c}</option>`).join("")}
+    </select></div>
+    <div class="col-md-6"><input type="text" class="form-control" id="${p}Version" placeholder="Version (e.g. v1)" value="${escapeHtml(d.version || "")}"></div>
+    <div class="col-md-6"><select class="form-select" id="${p}Format">
+      ${FORMATS.map(f => `<option value="${f}" ${f === d.format ? "selected" : ""}>${f}</option>`).join("")}
+    </select></div>
+    <div class="col-12"><textarea class="form-control" id="${p}Content" placeholder="Approved content text..." required>${escapeHtml(d.rawContent || "")}</textarea></div>
+    <div class="col-12 d-flex gap-2"><button class="btn btn-zy" type="submit">${submitLabel}</button>${extra}</div>
+  </form>`;
+}
 
+function readDocForm(p) {
+  const g = id => document.getElementById(p + id).value;
+  return { title: g("Title"), category: g("Category"), version: g("Version") || "v1", format: g("Format"), rawContent: g("Content") };
+}
 
 async function renderAdminView(app) {
-
   app.innerHTML = `
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-plus me-2"></i>Add knowledge document <span class="badge bg-secondary ms-1">starts as DRAFT</span></h5>
+    ${docForm("doc", null, "createDoc(event)", "Create as draft")}
+    <div class="text-danger small mt-2" id="adminError"></div>
+  </div></div>
 
-    <div class="wrap">
-
-      <div class="card">
-
-        <h3>
-          Add Knowledge Document
-          (starts as DRAFT)
-        </h3>
-
-        <form
-          class="inline"
-          onsubmit="createDoc(event)">
-
-          <input
-            type="text"
-            id="docTitle"
-            placeholder="Title"
-            required
-          />
-
-          <select
-            id="docCategory"
-            required>
-
-            <option value="">
-              Category...
-            </option>
-
-            <option>Company</option>
-            <option>Services</option>
-            <option>Franchise</option>
-            <option>Policies</option>
-            <option>FAQ</option>
-
-          </select>
-
-          <input
-            type="text"
-            id="docVersion"
-            placeholder="Version (e.g. v1)"
-          />
-
-          <select id="docFormat">
-
-            <option value="txt">
-              txt
-            </option>
-
-            <option value="markdown">
-              markdown
-            </option>
-
-            <option value="json">
-              json
-            </option>
-
-          </select>
-
-          <textarea
-            id="docContent"
-            placeholder="Approved content text..."
-            required>
-          </textarea>
-
-          <button
-            class="send"
-            type="submit">
-            Create as DRAFT
-          </button>
-
-        </form>
-
-        <div
-          class="error"
-          id="adminError">
-        </div>
-
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div>
+        <h5 class="fw-bold mb-1"><i class="bi bi-collection me-2"></i>Knowledge base</h5>
+        <div class="text-muted small">Lifecycle: Draft → Approved → Active in RAG → Archived</div>
       </div>
-
-
-      <div class="card">
-
-        <h3>
-          Knowledge Base
-        </h3>
-
-        <p class="hint">
-          Lifecycle:
-          DRAFT →
-          APPROVED →
-          ACTIVE IN RAG →
-          ARCHIVED
-        </p>
-
-
-        <div style="margin-bottom:8px;">
-
-          <select
-            onchange="
-              adminFilter.status=this.value;
-              loadDocs()
-            ">
-
-            <option value="">
-              All statuses
-            </option>
-
-            <option>DRAFT</option>
-
-            <option>APPROVED</option>
-
-            <option>ACTIVE_IN_RAG</option>
-
-            <option>ARCHIVED</option>
-
-          </select>
-
-        </div>
-
-
-        <table>
-
-          <thead>
-
-            <tr>
-
-              <th>Title</th>
-
-              <th>Category</th>
-
-              <th>Status</th>
-
-              <th>Actions</th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody id="docRows">
-
-            <tr>
-
-              <td colspan="4">
-                Loading...
-              </td>
-
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-
-      <div
-        class="card"
-        id="editPanel"
-        style="display:none;">
-      </div>
-
+      <select class="form-select w-auto" onchange="adminFilter.status=this.value;loadDocs()">
+        <option value="">All statuses</option><option>DRAFT</option><option>APPROVED</option><option>ACTIVE_IN_RAG</option><option>ARCHIVED</option>
+      </select>
     </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Title</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="docRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div></div>
 
-  `;
-
-
+  <div class="card" id="editPanel" style="display:none"></div>`;
   await loadDocs();
-
 }
-
-
-/* =========================================================
-   EDIT DOCUMENT
-========================================================= */
 
 async function openEditDoc(id) {
-
-  const panel =
-    document.getElementById(
-      "editPanel"
-    );
-
-  panel.style.display =
-    "block";
-
-  panel.innerHTML =
-    "<p>Loading document...</p>";
-
-
+  const panel = document.getElementById("editPanel");
+  panel.style.display = "block";
+  panel.innerHTML = `<div class="card-body">Loading document...</div>`;
   try {
-
-    const doc =
-      await api(
-        `/api/knowledge/${encodeURIComponent(id)}`
-      );
-
-
-    panel.innerHTML = `
-
-      <h3>
-        Edit:
-        ${escapeHtml(doc.title)}
-      </h3>
-
-      <p class="hint">
-        Saving sends this document back to DRAFT.
-        It will need to be Approved and Activated
-        again before Zynora uses the new text.
-      </p>
-
-
-      <form
-        class="inline"
-        onsubmit="
-          saveEditDoc(
-            event,
-            '${doc.id}'
-          )
-        ">
-
-        <input
-          type="text"
-          id="editTitle"
-          value="${escapeHtml(doc.title)}"
-          placeholder="Title"
-          required
-        />
-
-
-        <select
-          id="editCategory"
-          required>
-
-          ${
-            [
-              "Company",
-              "Services",
-              "Franchise",
-              "Policies",
-              "FAQ"
-            ]
-              .map(
-                (c) => `
-                  <option
-                    ${
-                      c === doc.category
-                        ? "selected"
-                        : ""
-                    }>
-                    ${c}
-                  </option>
-                `
-              )
-              .join("")
-          }
-
-        </select>
-
-
-        <input
-          type="text"
-          id="editVersion"
-          value="${escapeHtml(doc.version || "")}"
-          placeholder="Version"
-        />
-
-
-        <select id="editFormat">
-
-          ${
-            [
-              "txt",
-              "markdown",
-              "json"
-            ]
-              .map(
-                (f) => `
-                  <option
-                    value="${f}"
-                    ${
-                      f === doc.format
-                        ? "selected"
-                        : ""
-                    }>
-                    ${f}
-                  </option>
-                `
-              )
-              .join("")
-          }
-
-        </select>
-
-
-        <textarea
-          id="editContent"
-          required>${escapeHtml(
-            doc.rawContent || ""
-          )}</textarea>
-
-
-        <div>
-
-          <button
-            class="send"
-            type="submit">
-            Save Changes
-          </button>
-
-          <button
-            type="button"
-            class="secondary"
-            onclick="closeEditDoc()">
-            Cancel
-          </button>
-
-        </div>
-
-      </form>
-
-
-      <div
-        class="error"
-        id="editError">
-      </div>
-
-    `;
-
-
+    const doc = await api(`/api/knowledge/${encodeURIComponent(id)}`);
+    panel.innerHTML = `<div class="card-body">
+      <h5 class="fw-bold">Edit: ${escapeHtml(doc.title)}</h5>
+      <div class="alert alert-warning small py-2">Saving sends this document back to DRAFT. It must be approved and activated again before Zynora uses the new text.</div>
+      ${docForm("edit", doc, `saveEditDoc(event,'${doc.id}')`, "Save changes", `<button type="button" class="btn btn-outline-secondary" onclick="closeEditDoc()">Cancel</button>`)}
+      <div class="text-danger small mt-2" id="editError"></div>
+    </div>`;
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (err) {
-
-    panel.innerHTML = `
-      <p class="error">
-        ${escapeHtml(err.message)}
-      </p>
-    `;
-
+    panel.innerHTML = `<div class="card-body text-danger">${escapeHtml(err.message)}</div>`;
   }
-
 }
-
 
 function closeEditDoc() {
-
-  const panel =
-    document.getElementById(
-      "editPanel"
-    );
-
-  panel.style.display =
-    "none";
-
+  const panel = document.getElementById("editPanel");
+  panel.style.display = "none";
   panel.innerHTML = "";
-
 }
-
 
 async function saveEditDoc(e, id) {
-
   e.preventDefault();
-
-
-  const body = {
-
-    title:
-      document.getElementById(
-        "editTitle"
-      ).value,
-
-    category:
-      document.getElementById(
-        "editCategory"
-      ).value,
-
-    version:
-      document.getElementById(
-        "editVersion"
-      ).value ||
-      "v1",
-
-    format:
-      document.getElementById(
-        "editFormat"
-      ).value,
-
-    rawContent:
-      document.getElementById(
-        "editContent"
-      ).value
-
-  };
-
-
   try {
-
-    await api(
-      `/api/knowledge/${encodeURIComponent(id)}`,
-      {
-        method: "PUT",
-        body
-      }
-    );
-
-
+    await api(`/api/knowledge/${encodeURIComponent(id)}`, { method: "PUT", body: readDocForm("edit") });
     closeEditDoc();
-
     await loadDocs();
-
-
-  } catch (err) {
-
-    document.getElementById(
-      "editError"
-    ).textContent =
-      err.message;
-
-  }
-
+  } catch (err) { document.getElementById("editError").textContent = err.message; }
 }
-
-
-/* =========================================================
-   LOAD KNOWLEDGE DOCUMENTS
-========================================================= */
 
 async function loadDocs() {
-
+  const rows = document.getElementById("docRows");
   try {
-
-    const qs =
-      adminFilter.status
-        ? `?status=${encodeURIComponent(
-            adminFilter.status
-          )}`
-        : "";
-
-
-    adminDocs =
-      await api(
-        "/api/knowledge" + qs
-      );
-
-
-    const rows =
-      document.getElementById(
-        "docRows"
-      );
-
+    const qs = adminFilter.status ? `?status=${encodeURIComponent(adminFilter.status)}` : "";
+    adminDocs = await api("/api/knowledge" + qs);
     if (!rows) return;
-
-
-    if (!adminDocs.length) {
-
-      rows.innerHTML = `
-        <tr>
-          <td colspan="4">
-            No documents found.
-          </td>
-        </tr>
-      `;
-
-      return;
-
-    }
-
-
-    rows.innerHTML =
-      adminDocs
-        .map(
-          (d) => `
-
-            <tr>
-
-              <td>
-                ${escapeHtml(d.title)}
-              </td>
-
-              <td>
-                ${escapeHtml(d.category)}
-              </td>
-
-              <td>
-                <span
-                  class="badge ${escapeHtml(d.status)}">
-                  ${escapeHtml(d.status)}
-                </span>
-              </td>
-
-              <td>
-
-                <button
-                  class="secondary"
-                  onclick="
-                    openEditDoc('${d.id}')
-                  ">
-                  Edit
-                </button>
-
-
-                ${
-                  d.status === "DRAFT"
-                    ? `
-                      <button
-                        class="secondary"
-                        onclick="
-                          approveDoc('${d.id}')
-                        ">
-                        Approve
-                      </button>
-                    `
-                    : ""
-                }
-
-
-                ${
-                  d.status === "APPROVED"
-                    ? `
-                      <button
-                        class="secondary"
-                        onclick="
-                          activateDoc('${d.id}')
-                        ">
-                        Activate in RAG
-                      </button>
-                    `
-                    : ""
-                }
-
-
-                ${
-                  d.status === "ACTIVE_IN_RAG"
-                    ? `
-                      <button
-                        class="secondary"
-                        onclick="
-                          archiveDoc('${d.id}')
-                        ">
-                        Archive
-                      </button>
-                    `
-                    : ""
-                }
-
-
-                ${
-                  d.status === "ARCHIVED"
-                    ? `
-                      <button
-                        class="secondary"
-                        onclick="
-                          restoreDoc('${d.id}')
-                        ">
-                        Restore to Draft
-                      </button>
-                    `
-                    : ""
-                }
-
-              </td>
-
-            </tr>
-
-          `
-        )
-        .join("");
-
-
+    if (!adminDocs.length) { rows.innerHTML = `<tr><td colspan="4" class="text-muted">No documents found.</td></tr>`; return; }
+    const btn = (fn, id, label, cls = "btn-outline-primary") => `<button class="btn btn-sm ${cls}" onclick="${fn}('${id}')">${label}</button>`;
+    rows.innerHTML = adminDocs.map(d => `
+      <tr>
+        <td class="fw-semibold">${escapeHtml(d.title)}</td>
+        <td>${escapeHtml(d.category)}</td>
+        <td><span class="badge badge-status ${STATUS_CLASS[d.status] || "bg-dark"}">${escapeHtml(d.status)}</span></td>
+        <td class="d-flex flex-wrap gap-1">
+          ${btn("openEditDoc", d.id, "Edit", "btn-outline-secondary")}
+          ${d.status === "DRAFT" ? btn("approveDoc", d.id, "Approve") : ""}
+          ${d.status === "APPROVED" ? btn("activateDoc", d.id, "Activate in RAG", "btn-outline-success") : ""}
+          ${d.status === "ACTIVE_IN_RAG" ? btn("archiveDoc", d.id, "Archive", "btn-outline-danger") : ""}
+          ${d.status === "ARCHIVED" ? btn("restoreDoc", d.id, "Restore to draft") : ""}
+        </td>
+      </tr>`).join("");
   } catch (err) {
-
-    const rows =
-      document.getElementById(
-        "docRows"
-      );
-
-    if (rows) {
-
-      rows.innerHTML = `
-        <tr>
-          <td
-            colspan="4"
-            class="error">
-            ${escapeHtml(err.message)}
-          </td>
-        </tr>
-      `;
-
-    }
-
+    if (rows) rows.innerHTML = `<tr><td colspan="4" class="text-danger">${escapeHtml(err.message)}</td></tr>`;
   }
-
 }
-
-
-
 
 async function createDoc(e) {
-
   e.preventDefault();
-
-
-  const body = {
-
-    title:
-      document.getElementById(
-        "docTitle"
-      ).value,
-
-    category:
-      document.getElementById(
-        "docCategory"
-      ).value,
-
-    version:
-      document.getElementById(
-        "docVersion"
-      ).value ||
-      "v1",
-
-    format:
-      document.getElementById(
-        "docFormat"
-      ).value,
-
-    rawContent:
-      document.getElementById(
-        "docContent"
-      ).value
-
-  };
-
-
   try {
-
-    await api(
-      "/api/knowledge",
-      {
-        method: "POST",
-        body
-      }
-    );
-
-
-    document.getElementById(
-      "docTitle"
-    ).value = "";
-
-    document.getElementById(
-      "docContent"
-    ).value = "";
-
-
-    document.getElementById(
-      "adminError"
-    ).textContent = "";
-
-
+    await api("/api/knowledge", { method: "POST", body: readDocForm("doc") });
+    document.getElementById("docTitle").value = "";
+    document.getElementById("docContent").value = "";
+    document.getElementById("adminError").textContent = "";
     await loadDocs();
-
-
-  } catch (err) {
-
-    document.getElementById(
-      "adminError"
-    ).textContent =
-      err.message;
-
-  }
-
+  } catch (err) { document.getElementById("adminError").textContent = err.message; }
 }
 
-
-/* =========================================================
-   KNOWLEDGE ACTIONS
-========================================================= */
-
-async function approveDoc(id) {
-
+async function docAction(id, action, label) {
   try {
-
-    await api(
-      `/api/knowledge/${encodeURIComponent(id)}/approve`,
-      {
-        method: "POST"
-      }
-    );
-
+    await api(`/api/knowledge/${encodeURIComponent(id)}/${action}`, { method: "POST" });
     await loadDocs();
-
-  } catch (err) {
-
-    alert(
-      "Approve failed: " +
-      err.message
-    );
-
-  }
-
+  } catch (err) { alert(label + " failed: " + err.message); }
 }
+const approveDoc = id => docAction(id, "approve", "Approve");
+const activateDoc = id => docAction(id, "activate", "Activation");
+const archiveDoc = id => docAction(id, "archive", "Archive");
+const restoreDoc = id => docAction(id, "restore", "Restore");
 
-
-async function activateDoc(id) {
-
-  try {
-
-    await api(
-      `/api/knowledge/${encodeURIComponent(id)}/activate`,
-      {
-        method: "POST"
-      }
-    );
-
-    await loadDocs();
-
-  } catch (err) {
-
-    alert(
-      "Activation failed: " +
-      err.message
-    );
-
-  }
-
-}
-
-
-async function archiveDoc(id) {
-
-  try {
-
-    await api(
-      `/api/knowledge/${encodeURIComponent(id)}/archive`,
-      {
-        method: "POST"
-      }
-    );
-
-    await loadDocs();
-
-  } catch (err) {
-
-    alert(
-      "Archive failed: " +
-      err.message
-    );
-
-  }
-
-}
-
-
-async function restoreDoc(id) {
-
-  try {
-
-    await api(
-      `/api/knowledge/${encodeURIComponent(id)}/restore`,
-      {
-        method: "POST"
-      }
-    );
-
-    await loadDocs();
-
-  } catch (err) {
-
-    alert(
-      "Restore failed: " +
-      err.message
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-
-/* =========================================================
-   MONITORING DASHBOARD (admin only) - Day 12
-========================================================= */
-
+/* ---------- Monitoring (admin only) ---------- */
 let monitorFilter = { from: "", to: "" };
 let monitorTimer = null;
 
 async function renderMonitorView(app) {
   app.innerHTML = `
-    <div class="panel">
-      <h3>AI Monitoring Dashboard <span id="mVersion" style="font-weight:normal;font-size:13px;color:#667"></span></h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px">
-        <label>From<br><input type="date" id="mFrom" value="${monitorFilter.from}"></label>
-        <label>To<br><input type="date" id="mTo" value="${monitorFilter.to}"></label>
-        <button onclick="applyMonitorFilter()">Apply filter</button>
-        <button onclick="clearMonitorFilter()">Clear</button>
-        <button onclick="loadMonitor()">Refresh</button>
+  <div class="card"><div class="card-body">
+    <h5 class="fw-bold mb-3"><i class="bi bi-activity me-2"></i>AI monitoring dashboard <small class="text-muted fw-normal ms-2" id="mVersion"></small></h5>
+    <div class="row g-2 align-items-end mb-3">
+      <div class="col-6 col-md-3"><label class="form-label small mb-1">From</label><input type="date" class="form-control" id="mFrom" value="${monitorFilter.from}"></div>
+      <div class="col-6 col-md-3"><label class="form-label small mb-1">To</label><input type="date" class="form-control" id="mTo" value="${monitorFilter.to}"></div>
+      <div class="col-12 col-md-6 d-flex gap-2">
+        <button class="btn btn-zy" onclick="applyMonitorFilter()">Apply filter</button>
+        <button class="btn btn-outline-secondary" onclick="clearMonitorFilter()">Clear</button>
+        <button class="btn btn-outline-secondary" onclick="loadMonitor()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
       </div>
-      <div id="mError" style="color:#b00020"></div>
-      <div id="mCards"></div>
-      <div id="mBody"></div>
-    </div>`;
+    </div>
+    <div class="text-danger" id="mError"></div>
+    <div id="mCards"></div>
+    <div id="mBody"></div>
+  </div></div>`;
   clearInterval(monitorTimer);
   monitorTimer = setInterval(() => { if (state.view === "monitor") loadMonitor(); else clearInterval(monitorTimer); }, 15000);
   loadMonitor();
@@ -2424,6 +547,7 @@ function clearMonitorFilter() { monitorFilter = { from: "", to: "" }; renderMoni
 
 async function loadMonitor() {
   const err = document.getElementById("mError");
+  if (!err) return;
   try {
     const qs = new URLSearchParams();
     if (monitorFilter.from) qs.set("from", monitorFilter.from);
@@ -2435,99 +559,51 @@ async function loadMonitor() {
       api("/api/health")
     ]);
     err.textContent = "";
-    document.getElementById("mVersion").textContent = "v" + health.version + " | DB: " + health.database + " (" + health.store + ")";
-    const card = (label, value, cls) => `<div style="flex:1 1 150px;border:1px solid #d8dde6;border-radius:8px;padding:10px;background:#fff"><div style="font-size:12px;color:#667">${label}</div><div style="font-size:22px;font-weight:700" class="${cls||""}">${value}</div></div>`;
-    const healthColor = { HEALTHY: "#0a7d33", DEGRADED: "#b26a00", DOWN: "#b00020" }[m.aiServiceHealth] || "#333";
-    document.getElementById("mCards").innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-      ${card("Total Conversations", m.totalConversations)}
-      ${card("Total Questions", m.totalQuestions)}
-      ${card("Successful Answers", m.successfulAnswers)}
-      ${card("No-Answer Responses", m.noAnswerResponses)}
-      ${card("Blocked Injections", m.blockedInjectionAttempts)}
-      ${card("Retrieval Failures", m.retrievalFailures)}
-      ${card("Avg Response Time", m.avgResponseTimeMs + " ms")}
-      ${card("Error Count", m.errorCount)}
-      ${card("Auth Failures", m.authFailures)}
-      <div style="flex:1 1 150px;border:1px solid #d8dde6;border-radius:8px;padding:10px;background:#fff"><div style="font-size:12px;color:#667">AI Service Health</div><div style="font-size:22px;font-weight:700;color:${healthColor}">${m.aiServiceHealth}</div></div>
+    //document.getElementById("mVersion").textContent = "v" + health.version + " | DB: " + health.database + " (" + health.store + ")";
+    const stat = (label, value, color) => `<div class="col-6 col-md-4 col-xl"><div class="card stat h-100"${color ? ` style="border-left-color:${color}"` : ""}><div class="card-body py-2"><div class="small text-muted">${label}</div><div class="v"${color ? ` style="color:${color}"` : ""}>${value}</div></div></div></div>`;
+    const hc = { HEALTHY: "#0a7d33", DEGRADED: "#b26a00", DOWN: "#b00020" }[m.aiServiceHealth] || "#333";
+    document.getElementById("mCards").innerHTML = `<div class="row g-2 mb-4">
+      ${stat("Total Conversations", m.totalConversations)}${stat("Total Questions", m.totalQuestions)}
+      ${stat("Successful Answers", m.successfulAnswers, "#0a7d33")}${stat("No-Answer Responses", m.noAnswerResponses, "#b26a00")}
+      ${stat("Blocked Injections", m.blockedInjectionAttempts, "#b00020")}${stat("Retrieval Failures", m.retrievalFailures, "#b00020")}
+      ${stat("Avg Response Time", m.avgResponseTimeMs + " ms")}${stat("Error Count", m.errorCount, "#b00020")}
+      ${stat("Auth Failures", m.authFailures, "#b26a00")}${stat("AI Service Health", m.aiServiceHealth, hc)}
     </div>`;
     const days = Object.entries(m.dailyQuestions).sort();
     const maxDay = Math.max(1, ...days.map(d => d[1]));
-    const t = (rows, head) => `<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>${head.map(h=>`<th style="text-align:left;border-bottom:1px solid #ccd;padding:4px">${h}</th>`).join("")}</tr></thead><tbody>${rows.join("") || `<tr><td colspan="${head.length}" style="padding:6px;color:#667">No data</td></tr>`}</tbody></table>`;
-    const td = (v) => `<td style="padding:4px;border-bottom:1px solid #eef;vertical-align:top">${v}</td>`;
+    const td = v => `<td>${v}</td>`;
+    const t = (rows, head) => `<div class="table-responsive"><table class="table table-sm table-hover align-middle"><thead class="table-light"><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("") || `<tr><td colspan="${head.length}" class="text-muted">No data</td></tr>`}</tbody></table></div>`;
     document.getElementById("mBody").innerHTML = `
-      <h4>Daily Questions</h4>
-      ${days.map(([d,c]) => `<div style="display:flex;gap:8px;align-items:center;font-size:13px"><span style="width:90px">${d}</span><div style="background:#3b6fd4;height:12px;width:${Math.round(c/maxDay*300)}px"></div><span>${c}</span></div>`).join("") || "<p style='color:#667'>No questions in this range.</p>"}
-      <h4>Frequently Asked Questions</h4>
-      ${t(m.topQuestions.map(q => `<tr>${td(escapeHtml(q.question))}${td(q.count)}</tr>`), ["Question","Count"])}
-      <h4>Knowledge Categories Used</h4>
-      ${t(m.knowledgeCategories.map(c => `<tr>${td(escapeHtml(c.category))}${td(c.count)}</tr>`), ["Category","Answers"])}
-      <h4>Recent AI Responses (quality)</h4>
-      ${t(quality.map(q => `<tr>${td(escapeHtml(q.question))}${td(q.status)}${td(q.grounded ? "Grounded" : "Not grounded")}${td(q.confidence)}${td(Number(q.similarity).toFixed(2))}${td(q.retrievedChunks)}${td(q.responseTimeMs + " ms")}${td(escapeHtml((q.sources||[]).join(", ")))}</tr>`), ["Question","Status","Grounded","Confidence","Similarity","Chunks","Time","Sources"])}
-      <h4>Error / Event Logs (latest 40)</h4>
-      ${t(logs.map(l => `<tr style="${l.level==="error"?"background:#fdecee":l.level==="warn"?"background:#fff7e6":""}">${td(l.timestamp.replace("T"," ").slice(0,19))}${td(l.level)}${td(escapeHtml(l.module))}${td(escapeHtml(l.action))}${td(escapeHtml(l.status))}${td(escapeHtml(String(l.user).slice(0,14)))}${td(escapeHtml(l.error||""))}${td(`<code>${escapeHtml(l.traceId||"")}</code>`)}</tr>`), ["Time","Level","Module","Action","Status","User","Error","Trace ID"])}
-    `;
+      <h6 class="fw-bold">Daily questions</h6>
+      ${days.map(([d, c]) => `<div class="d-flex gap-2 align-items-center small mb-1"><span style="width:90px">${d}</span><div class="bar" style="width:${Math.round(c / maxDay * 300)}px"></div><span>${c}</span></div>`).join("") || `<p class="text-muted">No questions in this range.</p>`}
+      <h6 class="fw-bold mt-4">Frequently asked questions</h6>
+      ${t(m.topQuestions.map(q => `<tr>${td(escapeHtml(q.question))}${td(q.count)}</tr>`), ["Question", "Count"])}
+      <h6 class="fw-bold mt-4">Knowledge categories used</h6>
+      ${t(m.knowledgeCategories.map(c => `<tr>${td(escapeHtml(c.category))}${td(c.count)}</tr>`), ["Category", "Answers"])}
+      <h6 class="fw-bold mt-4">Recent AI responses (quality)</h6>
+      ${t(quality.map(q => `<tr>${td(escapeHtml(q.question))}${td(q.status)}${td(q.grounded ? `<span class="badge bg-success">Grounded</span>` : `<span class="badge bg-warning text-dark">Not grounded</span>`)}${td(q.confidence)}${td(Number(q.similarity).toFixed(2))}${td(q.retrievedChunks)}${td(q.responseTimeMs + " ms")}${td(escapeHtml((q.sources || []).join(", ")))}</tr>`), ["Question", "Status", "Grounded", "Confidence", "Similarity", "Chunks", "Time", "Sources"])}
+      <h6 class="fw-bold mt-4">Error / event logs (latest 40)</h6>
+      ${t(logs.map(l => `<tr class="${l.level === "error" ? "table-danger" : l.level === "warn" ? "table-warning" : ""}">${td(l.timestamp.replace("T", " ").slice(0, 19))}${td(l.level)}${td(escapeHtml(l.module))}${td(escapeHtml(l.action))}${td(escapeHtml(l.status))}${td(escapeHtml(String(l.user).slice(0, 14)))}${td(escapeHtml(l.error || ""))}${td(`<code>${escapeHtml(l.traceId || "")}</code>`)}</tr>`), ["Time", "Level", "Module", "Action", "Status", "User", "Error", "Trace ID"])}`;
   } catch (e) { err.textContent = "Could not load monitoring data: " + e.message; }
 }
 
+/* ---------- Helpers ---------- */
 function getCurrentConversationTitle() {
-
-  if (!state.sessionId) {
-
-    return "Zynora Chat";
-
-  }
-
-  const conversation =
-    state.conversations.find(
-      (c) =>
-        c.id === state.sessionId
-    );
-
-  return conversation?.title ||
-    "Zynora Chat";
-
+  if (!state.sessionId) return "Zynora Chat";
+  const c = state.conversations.find(c => c.id === state.sessionId);
+  return c?.title || "Zynora Chat";
 }
-
 
 function formatDate(value) {
-
   if (!value) return "";
-
-  try {
-
-    return new Date(value)
-      .toLocaleString();
-
-  } catch {
-
-    return "";
-
-  }
-
+  try { return new Date(value).toLocaleString(); } catch { return ""; }
 }
-
 
 function escapeHtml(s) {
-
-  return String(s || "")
-    .replace(
-      /[&<>"']/g,
-      (c) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      }[c])
-    );
-
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-
-
 render();
-
 </script>
-
 </body>
 </html>
