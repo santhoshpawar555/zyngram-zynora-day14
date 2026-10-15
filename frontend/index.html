@@ -55,10 +55,10 @@
 <nav class="navbar navbar-expand-md navbar-dark zy-navbar sticky-top">
   <div class="container-xl">
     <a class="navbar-brand d-flex align-items-center gap-2" href="#" onclick="setView('chat');return false;">
-      <img src="./assets/zyngram_logo1.ico" class="zy-logo" alt="Zyngram logo" onerror="this.style.display='none'">
+      <img src="./assets/zyngram_logo1.png" class="zy-logo" alt="Zyngram logo" onerror="this.style.display='none'">
       <span class="d-flex flex-column">
         <span class="zy-brand-title">Zynora</span>
-        <span class="zy-brand-sub">Zyngram Internal Assistant</span>
+        <span class="zy-brand-sub">Zyngram Internal Assistant &nbsp;v1.1</span>
       </span>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-label="Toggle menu">
@@ -77,7 +77,7 @@
 // Same-origin when served by the backend (production); localhost:5050 when opened as a file.
 const API_BASE = window.ZYNORA_API_BASE ||
   (location.protocol === "file:" ? "http://localhost:5050" : location.origin);
-const LOGO = "./assets/zyngram_logo1.ico";
+const LOGO = "./assets/zyngram_logo1.png";
 
 let state = {
   view: "chat",
@@ -105,6 +105,7 @@ function render() {
   renderNav();
   const app = document.getElementById("app");
   if (state.view === "login") app.innerHTML = loginView();
+  else if (state.view === "register") app.innerHTML = registerView();
   else if (state.view === "admin") renderAdminView(app);
   else if (state.view === "monitor") renderMonitorView(app);
   else renderChatPage(app);
@@ -163,7 +164,7 @@ function renderChatPage(app) {
           </div>
           ${state.sessionId ? `<button class="btn btn-sm btn-outline-secondary" onclick="clearConversation()"><i class="bi bi-eraser me-1"></i>Clear</button>` : ""}
         </div>
-        <div class="alert alert-light border small py-2 mb-3"><i class="bi bi-shield-check text-success me-1"></i>Zynora answers only from Zyngram's approved, active knowledge base. It never guesses and never uses the internet.</div>
+        <div class="alert alert-light border small py-2 mb-3"><i class="bi bi-shield-check text-success me-1"></i>Zynora answers only from Zyngram's approved, active knowledge base. Ask in English, Hindi or Telugu. It never guesses and never uses the internet.</div>
         <div class="chat-window" id="chatWindow">
           ${state.chatLog.length === 0
             ? `<div class="empty"><i class="bi bi-stars"></i>${state.sessionId ? "Ask your first question." : "Create a new conversation first."}</div>`
@@ -292,7 +293,7 @@ function renderMsg(m) {
   const sources = (m.sources || []).map(s =>
     `<span class="src-chip"><i class="bi bi-file-earmark-text me-1"></i>${escapeHtml(s.title || "Knowledge source")}${s.category ? ` (${escapeHtml(s.category)})` : ""}</span>`).join("");
   const meta = m.responseTimeMs
-    ? `<div class="meta">Confidence: ${escapeHtml(m.confidence || "N/A")} | Response time: ${Number(m.responseTimeMs)} ms${m.usedContext ? " | Used conversation context" : ""} | ${m.grounded ? "Grounded" : "Not grounded"}</div>` : "";
+    ? `<div class="meta">Confidence: ${escapeHtml(m.confidence || "N/A")} | Response time: ${Number(m.responseTimeMs)} ms${m.language ? " | Language: " + escapeHtml(m.language.toUpperCase()) : ""}${m.usedContext ? " | Used conversation context" : ""} | ${m.grounded ? "Grounded" : "Not grounded"}</div>` : "";
   return `<div class="row-msg"><div class="avatar bot"><img src="${LOGO}" alt="" onerror="this.replaceWith(document.createTextNode('Z'))"></div>` +
     `<div class="bubble bot ${m.grounded ? "" : "ungrounded"}">${escapeHtml(m.text)}${sources ? `<div class="mt-2 pt-2 border-top"><div class="small fw-semibold text-muted">Sources</div>${sources}</div>` : ""}${meta}</div></div>`;
 }
@@ -320,7 +321,7 @@ async function sendChat() {
     const r = await api("/api/zynora/chat", { method: "POST", body: { message: text, conversationId: state.sessionId } });
     state.chatLog.push({
       role: "bot", text: r.answer, sources: r.sources || [], grounded: r.grounded,
-      confidence: r.confidence, responseTimeMs: r.responseTimeMs, usedContext: r.usedContext
+      confidence: r.confidence, responseTimeMs: r.responseTimeMs, usedContext: r.usedContext, language: r.language
     });
     await loadConversations();
   } catch (err) {
@@ -345,6 +346,11 @@ function loginView() {
         <button class="btn btn-zy btn-lg" type="submit">Login</button>
         <div class="text-danger small" id="loginError"></div>
       </form>
+      ${authNotice ? `<div class="alert alert-success small py-2 mt-3 mb-0">${escapeHtml(authNotice)}</div>` : ""}
+      <hr class="my-3">
+      <div class="text-center small">New to Zynora?
+        <a href="#" class="fw-semibold" onclick="authNotice='';setView('register');return false;">Create an account</a>
+      </div>
     </div></div>
   </div></div>`;
 }
@@ -371,11 +377,60 @@ async function doLogin(e) {
   }
 }
 
+/* ---------- Register ---------- */
+let authNotice = "";
+
+function registerView() {
+  return `
+  <div class="row justify-content-center"><div class="col-md-7 col-lg-5 col-xl-4">
+    <div class="card mt-4"><div class="card-body p-4">
+      <div class="text-center mb-3">
+        <img src="${LOGO}" alt="Zyngram" style="height:64px" onerror="this.style.display='none'">
+        <h4 class="fw-bold mt-2 mb-1">Create account</h4>
+        <p class="text-muted small mb-0">Fill in your details to register.</p>
+      </div>
+      <form onsubmit="doRegister(event)" class="d-grid gap-3">
+        <div class="form-floating"><input type="text" class="form-control" id="regName" placeholder="Full name" minlength="2" required><label for="regName">Full name</label></div>
+        <div class="form-floating"><input type="email" class="form-control" id="regEmail" placeholder="Email" required><label for="regEmail">Email</label></div>
+        <div class="form-floating"><input type="tel" class="form-control" id="regMobile" placeholder="Mobile number" inputmode="numeric" pattern="[0-9+\\-\\s]{10,15}" title="Enter a valid mobile number (10 to 15 digits)" required><label for="regMobile">Mobile number</label></div>
+        <div class="form-floating"><input type="password" class="form-control" id="regPassword" placeholder="Password" minlength="8" required><label for="regPassword">Password (min 8 characters)</label></div>
+        <button class="btn btn-zy btn-lg" type="submit" id="regBtn">Register</button>
+        <div class="text-danger small" id="regError"></div>
+      </form>
+      <hr class="my-3">
+      <div class="text-center small">Already have an account?
+        <a href="#" class="fw-semibold" onclick="setView('login');return false;">Login</a>
+      </div>
+    </div></div>
+  </div></div>`;
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const g = id => document.getElementById(id).value.trim();
+  const btn = document.getElementById("regBtn");
+  const errEl = document.getElementById("regError");
+  btn.disabled = true;
+  errEl.textContent = "";
+  try {
+    const r = await api("/api/auth/register", {
+      method: "POST",
+      body: { name: g("regName"), email: g("regEmail"), mobile: g("regMobile"), password: document.getElementById("regPassword").value }
+    });
+    authNotice = r.message || "Registration successful. Please login.";
+    setView("login");
+  } catch (err) {
+    errEl.textContent = err.message;
+    btn.disabled = false;
+  }
+}
+
 /* ---------- Admin ---------- */
 let adminDocs = [];
 let adminFilter = { status: "", category: "" };
 const CATEGORIES = ["Company", "Services", "Franchise", "Policies", "FAQ"];
 const FORMATS = ["txt", "markdown", "json"];
+const LANGS = { en: "English", hi: "Hindi (हिंदी)", te: "Telugu (తెలుగు)" };
 const STATUS_CLASS = { DRAFT: "bg-secondary", APPROVED: "bg-warning text-dark", ACTIVE_IN_RAG: "bg-success", ARCHIVED: "bg-danger" };
 
 function docForm(p, d, submitFn, submitLabel, extra = "") {
@@ -391,6 +446,9 @@ function docForm(p, d, submitFn, submitLabel, extra = "") {
     <div class="col-md-6"><select class="form-select" id="${p}Format">
       ${FORMATS.map(f => `<option value="${f}" ${f === d.format ? "selected" : ""}>${f}</option>`).join("")}
     </select></div>
+    <div class="col-md-6"><select class="form-select" id="${p}Language" title="Language of this document's content">
+      ${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === (d.language || "en") ? "selected" : ""}>${v}</option>`).join("")}
+    </select></div>
     <div class="col-12"><textarea class="form-control" id="${p}Content" placeholder="Approved content text..." required>${escapeHtml(d.rawContent || "")}</textarea></div>
     <div class="col-12 d-flex gap-2"><button class="btn btn-zy" type="submit">${submitLabel}</button>${extra}</div>
   </form>`;
@@ -398,7 +456,7 @@ function docForm(p, d, submitFn, submitLabel, extra = "") {
 
 function readDocForm(p) {
   const g = id => document.getElementById(p + id).value;
-  return { title: g("Title"), category: g("Category"), version: g("Version") || "v1", format: g("Format"), rawContent: g("Content") };
+  return { title: g("Title"), category: g("Category"), version: g("Version") || "v1", format: g("Format"), language: g("Language"), rawContent: g("Content") };
 }
 
 async function renderAdminView(app) {
@@ -421,8 +479,8 @@ async function renderAdminView(app) {
     </div>
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
-        <thead class="table-light"><tr><th>Title</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="docRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+        <thead class="table-light"><tr><th>Title</th><th>Category</th><th>Language</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="docRows"><tr><td colspan="5">Loading...</td></tr></tbody>
       </table>
     </div>
   </div></div>
@@ -470,12 +528,13 @@ async function loadDocs() {
     const qs = adminFilter.status ? `?status=${encodeURIComponent(adminFilter.status)}` : "";
     adminDocs = await api("/api/knowledge" + qs);
     if (!rows) return;
-    if (!adminDocs.length) { rows.innerHTML = `<tr><td colspan="4" class="text-muted">No documents found.</td></tr>`; return; }
+    if (!adminDocs.length) { rows.innerHTML = `<tr><td colspan="5" class="text-muted">No documents found.</td></tr>`; return; }
     const btn = (fn, id, label, cls = "btn-outline-primary") => `<button class="btn btn-sm ${cls}" onclick="${fn}('${id}')">${label}</button>`;
     rows.innerHTML = adminDocs.map(d => `
       <tr>
         <td class="fw-semibold">${escapeHtml(d.title)}</td>
         <td>${escapeHtml(d.category)}</td>
+        <td><span class="badge text-bg-light border">${escapeHtml((d.language || "en").toUpperCase())}</span></td>
         <td><span class="badge badge-status ${STATUS_CLASS[d.status] || "bg-dark"}">${escapeHtml(d.status)}</span></td>
         <td class="d-flex flex-wrap gap-1">
           ${btn("openEditDoc", d.id, "Edit", "btn-outline-secondary")}
@@ -486,7 +545,7 @@ async function loadDocs() {
         </td>
       </tr>`).join("");
   } catch (err) {
-    if (rows) rows.innerHTML = `<tr><td colspan="4" class="text-danger">${escapeHtml(err.message)}</td></tr>`;
+    if (rows) rows.innerHTML = `<tr><td colspan="5" class="text-danger">${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
@@ -559,7 +618,7 @@ async function loadMonitor() {
       api("/api/health")
     ]);
     err.textContent = "";
-    //document.getElementById("mVersion").textContent = "v" + health.version + " | DB: " + health.database + " (" + health.store + ")";
+    document.getElementById("mVersion").textContent = "v" + health.version + " | DB: " + health.database + " (" + health.store + ")";
     const stat = (label, value, color) => `<div class="col-6 col-md-4 col-xl"><div class="card stat h-100"${color ? ` style="border-left-color:${color}"` : ""}><div class="card-body py-2"><div class="small text-muted">${label}</div><div class="v"${color ? ` style="color:${color}"` : ""}>${value}</div></div></div></div>`;
     const hc = { HEALTHY: "#0a7d33", DEGRADED: "#b26a00", DOWN: "#b00020" }[m.aiServiceHealth] || "#333";
     document.getElementById("mCards").innerHTML = `<div class="row g-2 mb-4">
