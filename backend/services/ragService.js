@@ -1,6 +1,7 @@
 const { db } = require("../db/store");
 const { STATUS } = require("./knowledgeService");
 const indexSignal = require("../lib/indexSignal");
+const langLib = require("../lib/lang");
 
 const STOPWORDS = new Set([
   "the", "is", "a", "an", "and", "or", "of", "to", "in", "on", "for",
@@ -89,30 +90,41 @@ function stem(word) {
   return w.length >= 3 ? w : word;
 }
 
-function tokenize(text) {
-  return (text || "")
-    .toLowerCase()
-    .replace(/around the clock/g, "24 hours")
-    .replace(/office timings?/g, "working hours")
-    .replace(/money back/g, "refund")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(
-      (word) =>
-        word.length > 1 &&
-        !STOPWORDS.has(word)
-    )
-    .map(stem);
+function stemFor(word, lang) {
+  return lang === "en" ? stem(word) : langLib.stemNonEnglish(word, lang);
 }
+
+// lang = "en" keeps the original English behaviour byte-for-byte; hi/te use a Unicode-aware tokenizer.
+function tokenize(text, lang = "en") {
+  let t = (text || "").toLowerCase();
+  let stop = STOPWORDS;
+  if (lang === "en") {
+    t = t
+      .replace(/around the clock/g, "24 hours")
+      .replace(/office timings?/g, "working hours")
+      .replace(/money back/g, "refund")
+      .replace(/[^a-z0-9\s]/g, " ");
+  } else {
+    // keep letters, combining marks (matras / virama) and digits
+    t = t.replace(/[^\p{L}\p{M}\p{N}\s]/gu, " ");
+    stop = langLib.stopwordsFor(lang);
+  }
+  return t
+    .split(/\s+/)
+    .filter((word) => word.length > 1 && !stop.has(word))
+    .map((word) => stemFor(word, lang));
+}
+
+const chunkLang = (c) => c.language || "en"; // documents created before multi-language support are English
 
 // Vocabulary of the approved (ACTIVE) knowledge base, cached by chunk count + newest update.
 let vocabCache = { key: null, set: null };
-async function knowledgeVocabulary() {
-  const chunks = await getActiveChunks();
-  const key = chunks.length + ":" + chunks.reduce((m, c) => (c.updatedAt > m ? c.updatedAt : m), "");
+async function knowledgeVocabulary(lang = "en") {
+  const chunks = (await getActiveChunks()).filter((c) => chunkLang(c) === lang);
+  const key = lang + "|" + chunks.length + ":" + chunks.reduce((m, c) => (c.updatedAt > m ? c.updatedAt : m), "");
   if (vocabCache.key !== key) {
     const set = new Set();
-    for (const c of chunks) for (const w of tokenize([c.content, c.title, c.section].filter(Boolean).join(" "))) set.add(w);
+    for (const c of chunks) for (const w of tokenize([c.content, c.title, c.section].filter(Boolean).join(" "), lang)) set.add(w);
     vocabCache = { key, set };
   }
   return vocabCache.set;
@@ -129,11 +141,11 @@ async function loadActiveChunks() {
   const chunks = await db.knowledgeChunks.findAll({ status: STATUS.ACTIVE });
   const newest = new Map();
   for (const c of chunks) {
-    const key = (c.title || "").trim().toLowerCase();
+    const key = chunkLang(c) + "|" + (c.title || "").trim().toLowerCase();
     const v = versionNumber(c.version);
     if (!newest.has(key) || v > newest.get(key)) newest.set(key, v);
   }
-  return chunks.filter((c) => versionNumber(c.version) === newest.get((c.title || "").trim().toLowerCase()));
+  return chunks.filter((c) => versionNumber(c.version) === newest.get(chunkLang(c) + "|" + (c.title || "").trim().toLowerCase()));
 }
 // Day 14: cache the approved chunks in memory; reload when knowledge changes or after 60 s.
 let activeCache = { v: -1, at: 0, chunks: null };
@@ -144,10 +156,10 @@ async function getActiveChunks() {
   activeCache = { v, at: Date.now(), chunks };
   return chunks;
 }
-let dfCache = { key: null, map: null };
+const dfCache = new Map();
 function buildDocFrequency(chunks) {
   const key = require("crypto").createHash("md5").update(chunks.map((c) => c.id + (c.updatedAt || "")).join(",")).digest("hex");
-  if (dfCache.key === key) return dfCache.map; // PERF-2: reuse until the active chunk set changes
+  if (dfCache.has(key)) return dfCache.get(key); // PERF-2: reuse until the active chunk set changes
   const docFreq = new Map();
   for (const chunk of chunks) {
     const f = getFieldText(chunk);
@@ -155,7 +167,8 @@ function buildDocFrequency(chunks) {
       docFreq.set(word, (docFreq.get(word) || 0) + 1);
     }
   }
-  dfCache = { key, map: docFreq };
+  if (dfCache.size > 20) dfCache.clear();
+  dfCache.set(key, docFreq);
   return docFreq;
 }
 
@@ -178,7 +191,8 @@ function getFieldText(chunk) {
   const key = chunk.id + "|" + (chunk.updatedAt || chunk.createdAt || "");
   let f = fieldCache.get(key);
   if (!f) {
-    f = { content: tokenize(chunk.content), title: tokenize(chunk.title), section: tokenize(chunk.section) };
+    const L = chunkLang(chunk);
+    f = { content: tokenize(chunk.content, L), title: tokenize(chunk.title, L), section: tokenize(chunk.section, L) };
     if (fieldCache.size > 50000) fieldCache.clear();
     fieldCache.set(key, f);
   }
@@ -342,8 +356,9 @@ function scoreChunk(
     : 0;
 }
 
-async function search(query) {  
-  const activeChunks = await getActiveChunks();
+async function search(query, language = "en") {
+  // only chunks written in the user's language are searched (no translation, no guessing)
+  const activeChunks = (await getActiveChunks()).filter((c) => chunkLang(c) === language);
 
   if (activeChunks.length === 0) {
     return {
@@ -353,7 +368,7 @@ async function search(query) {
     };
   }
 
-  const queryWords = tokenize(query);
+  const queryWords = tokenize(query, language);
 
   if (queryWords.length === 0) {
     return {
@@ -363,7 +378,7 @@ async function search(query) {
     };
   }
 
-  const queryIntent = detectQueryIntent(query);
+  const queryIntent = language === "en" ? detectQueryIntent(query) : "NONE"; // intent rules are English-only
 
   const docFreq =
     buildDocFrequency(activeChunks);

@@ -1,5 +1,3 @@
-
-
 const MAX_CHUNK_LENGTH = 500; 
 
 function cleanText(text) {
@@ -13,7 +11,7 @@ function cleanText(text) {
 
 function splitLongParagraph(paragraph) {
   if (paragraph.length <= MAX_CHUNK_LENGTH) return [paragraph];
-  const sentences = paragraph.split(/(?<=[.!?])\s+/);
+  const sentences = paragraph.split(/(?<=[.!?\u0964\u0965])\s+/);
   const pieces = [];
   let current = "";
   for (const sentence of sentences) {

@@ -5,6 +5,7 @@ const { generateId } = require("../lib/id");
 const { badRequest } = require("../lib/http-helpers");
 const conversationService = require("./conversationService");
 const logger = require("../lib/logger");
+const lang = require("../lib/lang");
 
 const REFUSAL_MESSAGE =
   "I couldn't find this information in the approved Zyngram knowledge base.";
@@ -45,7 +46,8 @@ const INJECTION_PATTERNS = [
 ];
 
 function detectPromptInjection(message) {
-  return INJECTION_PATTERNS.some((pattern) => pattern.test(message));
+  return INJECTION_PATTERNS.some((pattern) => pattern.test(message)) ||
+    lang.INJECTION_PATTERNS_I18N.some((pattern) => pattern.test(message));
 }
 
 function buildAnswerFromMatches(matches) {
@@ -123,19 +125,25 @@ const NUMERIC_INTENT = /\b(how much|how many|percentage|percent|price|pricing|co
 const DURATION_INTENT = /\b(how long|how much time|duration|timeline|turnaround|when will)\b/i;
 const TIME_RE = /\b\d+(\s*(to|-)\s*\d+)?\s*(business\s+|working\s+)?(seconds?|minutes?|hours?|days?|weeks?|months?|years?)\b|\b(instant|instantly|immediately|real[- ]time)\b/i;
 
-async function boundaryCheck(message, matches) {
-  const vocab = await rag.knowledgeVocabulary();
-  const terms = rag.tokenize(message).filter((w) => !GENERIC_WORDS.has(w) && !GENERIC_WORDS.has(w + "e") && !/^\d+$/.test(w));
+async function boundaryCheck(message, matches, language = "en") {
+  const vocab = await rag.knowledgeVocabulary(language);
+  const terms = rag.tokenize(message, language).filter((w) => !GENERIC_WORDS.has(w) && !GENERIC_WORDS.has(w + "e") && !/^\d+$/.test(w));
   const unknown = terms.filter((w) => !vocab.has(w));
-  if (unknown.length > 0) return { ok: false, reason: "UNKNOWN_TERMS", unknown };
+  // English: any unknown topic word => refuse. Hindi/Telugu stop-word lists are shorter, so refuse
+  // when half or more of the topic words are unknown (tune this ratio after testing with real questions).
+  const strict = language === "en";
+  if (unknown.length > 0 && (strict || unknown.length / terms.length >= 0.5)) return { ok: false, reason: "UNKNOWN_TERMS", unknown };
 
     // Asking "how long" is only answerable if the retrieved text states a time.
-  if (DURATION_INTENT.test(message) && matches && matches.length && !matches.some((m) => TIME_RE.test(m.content || ""))) {
+  const durationAsked = language === "en" ? DURATION_INTENT.test(message) : Boolean(lang.DURATION_HINT[language] && lang.DURATION_HINT[language].test(message));
+  const timeStated = (m) => (language === "en" ? TIME_RE.test(m.content || "") : lang.TIME_HINT.test(m.content || ""));
+  if (durationAsked && matches && matches.length && !matches.some(timeStated)) {
     return { ok: false, reason: "DURATION_NOT_STATED", unknown: [] };
   }
 
   // Asking for a number (price, salary, percentage...) is only answerable if the retrieved text contains one.
-  if (NUMERIC_INTENT.test(message) && matches && matches.length && !matches.some((m) => /\d|%/.test(m.content || ""))) {
+  const numericAsked = language === "en" ? NUMERIC_INTENT.test(message) : Boolean(lang.NUMERIC_HINT[language] && lang.NUMERIC_HINT[language].test(message));
+  if (numericAsked && matches && matches.length && !matches.some((m) => /\d|%/.test(m.content || ""))) {
     return { ok: false, reason: "NUMERIC_FACT_MISSING", unknown: [] };
   }
   return { ok: true };
@@ -231,17 +239,18 @@ function splitQuestion(message) {
 }
 
 // Answer one part: search, boundary check, then build the answer or the fallback.
-async function answerPart(question) {
-  const retrieval = await rag.search(question.replace(/\b(what|happens?|happened)\b/gi, " "));
+async function answerPart(question, language = "en") {
+  const REFUSAL = lang.refusal(language);
+  const retrieval = await rag.search(question.replace(/\b(what|happens?|happened)\b/gi, " "), language);
   const matches = retrieval.matches || [];
   let grounded = Boolean(retrieval.grounded) && matches.length > 0;
   if (grounded) {
-    const bc = await boundaryCheck(question, matches);
+    const bc = await boundaryCheck(question, matches, language);
     if (!bc.ok) grounded = false;
   }
-  if (!grounded) return { question, answer: REFUSAL_MESSAGE, grounded: false, sources: [] };
-  const answer = buildAnswerFromMatches(matches) || REFUSAL_MESSAGE;
-  return { question, answer, grounded: answer !== REFUSAL_MESSAGE, sources: buildSources(matches) };
+  if (!grounded) return { question, answer: REFUSAL, grounded: false, sources: [] };
+  const answer = buildAnswerFromMatches(matches) || REFUSAL;
+  return { question, answer, grounded: answer !== REFUSAL, sources: buildSources(matches) };
 }
 
 async function chat({
@@ -262,6 +271,8 @@ async function chat({
   }
 
   const cleanMessage = message.trim();
+  const language = lang.detectLanguage(cleanMessage); // en | hi | te | other
+  const REFUSAL = lang.refusal(language);
   logger.log({ module: "chat", action: "USER_QUESTION", user: userId, traceId, meta: { sessionId, length: cleanMessage.length } });
 
   if (cleanMessage.length > 5000) {
@@ -289,7 +300,7 @@ async function chat({
     logger.log({ level: "warn", module: "security", action: "PROMPT_INJECTION_BLOCKED", status: "BLOCKED", user: userId, traceId, meta: { sessionId } });
     await db.aiQueryLogs.insert({
       id: generateId("QLOG"), sessionId, userId, userRole, question: cleanMessage, rewrittenQuery: cleanMessage,
-      answer: REFUSAL_MESSAGE, retrievedChunks: 0, chunkDetails: [], sources: [], similarity: 0, grounded: false,
+      answer: REFUSAL, retrievedChunks: 0, chunkDetails: [], sources: [], similarity: 0, grounded: false,
       confidence: "NONE", status: "BLOCKED_INJECTION", usedContext: false, responseTimeMs: Date.now() - startedAt,
       createdAt: new Date().toISOString(),
     });
@@ -299,7 +310,7 @@ async function chat({
       userId,
       userRole,
       message: cleanMessage,
-      answer: REFUSAL_MESSAGE,
+      answer: REFUSAL,
       sources: [],
       grounded: false,
       confidence: "NONE",
@@ -308,24 +319,25 @@ async function chat({
     });
 
     return {
-      answer: REFUSAL_MESSAGE,
+      answer: REFUSAL,
       sources: [],
       grounded: false,
       similarity: 0,
       confidence: "NONE",
       responseTimeMs,
       sessionId,
+      language,
     };
   }
 // split question parts and answer each part separately, then combine the results. This is useful for multi-part questions like "What is X? And how does it relate to Y?"
   const parts = splitQuestion(cleanMessage);
   if (parts.length > 1) {
     const results = [];
-    for (const p of parts) results.push(await answerPart(p));
+    for (const p of parts) results.push(await answerPart(p, language));
     const anyGrounded = results.some((r) => r.grounded);
     const answer = anyGrounded
       ? results.map((r, i) => `${i + 1}. ${r.answer}`).join("\n\n")
-      : REFUSAL_MESSAGE;
+      : REFUSAL;
     const seen = new Set();
     const sources = anyGrounded
       ? results.flatMap((r) => r.sources).filter((s) => !seen.has(s.title) && seen.add(s.title))
@@ -334,7 +346,7 @@ async function chat({
     const responseTimeMs = Date.now() - startedAt;
     await saveHistory({ sessionId, userId, userRole, message: cleanMessage, answer, sources, grounded: anyGrounded, confidence, responseTimeMs, flagged: false });
     await conversationService.touch(sessionId, userId, cleanMessage);
-    return { answer, sources, grounded: anyGrounded, similarity: 0, confidence, responseTimeMs, sessionId, retrievedChunks: 0, usedContext: false, parts: results };
+    return { answer, sources, grounded: anyGrounded, language, similarity: 0, confidence, responseTimeMs, sessionId, retrievedChunks: 0, usedContext: false, parts: results };
   }
 
 
@@ -344,24 +356,24 @@ async function chat({
   // Retrieve with the raw question first; for follow-ups also try the context-enriched query and
   // keep it only when it covers the user's own topic words at least as well as the raw query
   // (DEF-05: an explicit term like "Hub" must not be overridden by the previous topic).
-  let retrieval = await rag.search(cleanMessage);
+  let retrieval = await rag.search(cleanMessage, language);
   let usedContext = false;
   if (ctxInfo.usedContext) {
-    const topical = rag.tokenize(cleanMessage).filter((w) => !GENERIC_WORDS.has(w) && !GENERIC_WORDS.has(w + "e") && !/^\d+$/.test(w));
+    const topical = rag.tokenize(cleanMessage, language).filter((w) => !GENERIC_WORDS.has(w) && !GENERIC_WORDS.has(w + "e") && !/^\d+$/.test(w));
     const coverage = (res) => {
       if (!topical.length) return 1;
-      const text = new Set(rag.tokenize((res.matches || []).map((m) => `${m.title || ""} ${m.section || ""} ${m.content || ""}`).join(" ")));
+      const text = new Set(rag.tokenize((res.matches || []).map((m) => `${m.title || ""} ${m.section || ""} ${m.content || ""}`).join(" "), language));
       return topical.filter((w) => text.has(w)).length / topical.length;
     };
     const rawOk = retrieval.grounded && retrieval.matches?.length;
-    const enriched = await rag.search(rewrittenQuery);
+    const enriched = await rag.search(rewrittenQuery, language);
     const enrichedOk = enriched.grounded && enriched.matches?.length;
     if (enrichedOk && (!rawOk || coverage(enriched) >= coverage(retrieval))) {
       retrieval = enriched; usedContext = true;
     }
   }
   if (retrieval.grounded) {
-    const bc = await boundaryCheck(cleanMessage, retrieval.matches || []);
+    const bc = await boundaryCheck(cleanMessage, retrieval.matches || [], language);
     if (!bc.ok) {
       logger.log({ module: "rag", action: "BOUNDARY_REFUSAL", status: bc.reason, user: userId, traceId, meta: { sessionId, unknown: bc.unknown } });
       retrieval = { matches: [], grounded: false, topScore: 0 };
@@ -379,14 +391,14 @@ async function chat({
   let sources;
 
   if (!grounded || matches.length === 0) {
-    answer = REFUSAL_MESSAGE;
+    answer = REFUSAL;
     sources = [];
   } else {
     answer = buildAnswerFromMatches(matches);
     sources = buildSources(matches);
 
     if (!answer) {
-      answer = REFUSAL_MESSAGE;
+      answer = REFUSAL;
       sources = [];
     }
   }
@@ -438,6 +450,7 @@ async function chat({
     confidence,
     responseTimeMs,
     sessionId,
+    language,
     retrievedChunks: matches.length,
     usedContext,
     quality: {

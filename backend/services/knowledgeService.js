@@ -1,9 +1,9 @@
-
 const { db } = require("../db/store");
 const { generateId } = require("../lib/id");
 const { chunkText } = require("./chunkingService");
 const { badRequest, notFound } = require("../lib/http-helpers");
 const indexSignal = require("../lib/indexSignal");
+const { SUPPORTED_LANGS } = require("../lib/lang");
 
 const VALID_CATEGORIES = ["Company", "Services", "Franchise", "Policies", "FAQ"];
 const VALID_FORMATS = ["txt", "markdown", "json"];
@@ -18,6 +18,7 @@ async function regenerateChunksForDocument(doc) {
     documentId: doc.id,
     title: doc.title,
     category: doc.category,
+    language: doc.language || "en",
     section: chunk.section,
     version: doc.version,
     source: doc.source,
@@ -34,12 +35,16 @@ async function syncChunkStatus(documentId, status) {
      indexSignal.bump();
 }
 
-async function ingestDocument({ title, category, version, source, format, rawContent, createdBy }) {
+async function ingestDocument({ title, category, version, source, format, language, rawContent, createdBy }) {
   if (!title || !category || !rawContent) {
     throw badRequest("title, category and rawContent are required.");
   }
   if (!VALID_CATEGORIES.includes(category)) {
     throw badRequest(`category must be one of: ${VALID_CATEGORIES.join(", ")}`);
+  }
+  const resolvedLanguage = language || "en";
+  if (!SUPPORTED_LANGS.includes(resolvedLanguage)) {
+    throw badRequest(`language must be one of: ${SUPPORTED_LANGS.join(", ")}`);
   }
   const resolvedFormat = format || "txt";
   if (!VALID_FORMATS.includes(resolvedFormat)) {
@@ -53,6 +58,7 @@ async function ingestDocument({ title, category, version, source, format, rawCon
     version: version || "v1",
     source: source || "manual-entry",
     format: resolvedFormat,
+    language: resolvedLanguage,
     rawContent: typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent),
     status: STATUS.DRAFT,
     createdBy: createdBy || "unknown",
@@ -76,7 +82,7 @@ async function getDocument(id) {
   return doc;
 }
 
-async function updateDocumentContent(id, { title, category, version, source, format, rawContent }) {
+async function updateDocumentContent(id, { title, category, version, source, format, language, rawContent }) {
   await getDocument(id); // 404s early if it doesn't exist
   const patch = {};
   if (title) patch.title = title;
@@ -84,6 +90,10 @@ async function updateDocumentContent(id, { title, category, version, source, for
   if (version) patch.version = version;
   if (source) patch.source = source;
   if (format) patch.format = format;
+  if (language) {
+    if (!SUPPORTED_LANGS.includes(language)) throw badRequest(`language must be one of: ${SUPPORTED_LANGS.join(", ")}`);
+    patch.language = language;
+  }
   if (rawContent) patch.rawContent = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
 
   patch.status = STATUS.DRAFT;
