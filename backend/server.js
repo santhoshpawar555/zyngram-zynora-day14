@@ -9,6 +9,8 @@ const { seedAll } = require("./db/seed");
 const logger = require("./lib/logger");
 const rateLimit = require("./lib/rateLimit");
 const { getAuthPayload } = require("./middleware/auth");
+const { registerUserRoutes } = require("./routes/userRoutes");
+
 
 const VERSION = require("./package.json").version;
 const PORT = process.env.PORT || 5050;
@@ -41,7 +43,7 @@ require("./routes/knowledgeRoutes")(router);
 require("./routes/zynoraRoutes")(router);
 require("./routes/conversationRoutes")(router);
 require("./routes/monitoringRoutes")(router);
-
+registerUserRoutes(router);
 // Rate limits (per IP). Tunable via env.
 const limits = () => ({
   general: Number(process.env.RATE_LIMIT_PER_MIN || 120),
